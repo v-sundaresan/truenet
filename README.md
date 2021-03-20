@@ -171,6 +171,10 @@ Optional arguments:
        -v, --verbose                         Display debug messages [default = False]
 ```
 
+If you use the tool from this repository, please cite the following papers (journal publications to be updated, currently under review):
+
+- Sundaresan, V., Zamboni, G., Rothwell, P. M., Jenkinson, M., & Griffanti, L. (2020). Triplanar ensemble U-Net model for white matter hyperintensities segmentation on MR images. BioRxiv.
+- Sundaresan, V., Zamboni, G., Dinsdale, N. K., Rothwell, P. M., Griffanti, L., & Jenkinson, M. (2021). Comparison of domain adaptation techniques for white matter hyperintensity segmentation in brain MR images. bioRxiv.
 
 
 
