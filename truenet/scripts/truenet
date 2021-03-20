@@ -140,7 +140,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    '''
     if args.command == 'train':
         truenet_commands.train(args)
     elif args.command == 'evaluate':
@@ -152,7 +151,7 @@ if __name__ == "__main__":
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
-    '''
+
 
 
 
