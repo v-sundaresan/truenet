@@ -73,6 +73,7 @@ Optional arguments:
        -da, --data_augmentation      Applying data augmentation [default = True]
        -af, --aug_factor             Data inflation factor for augmentation [default = 2]
        -v, --verbose                 Display debug messages [default = False]
+       -h, --help.                   Print help message
 ```
 
 ### Testing the TrUE-Net model
@@ -95,6 +96,7 @@ Optional arguments:
       -cv_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N                  If -cv_type = everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
+       -h, --help.                   Print help message
 ```
 
 ### Fine-tuning the TrUE-Net model
@@ -136,6 +138,7 @@ Optional arguments:
        -da, --data_augmentation              Applying data augmentation [default = True]
        -af, --aug_factor                     Data inflation factor for augmentation [default = 2]
        -v, --verbose                         Display debug messages [default = False]
+       -h, --help.                   Print help message
 ```
 
 ### Leave-one-out validation of TrUE-Net model
@@ -169,6 +172,7 @@ Optional arguments:
        -da, --data_augmentation              Applying data augmentation [default = True]
        -af, --aug_factor                     Data inflation factor for augmentation [default = 2]
        -v, --verbose                         Display debug messages [default = False]
+       -h, --help.                   Print help message
 ```
 
 If you use the tool from this repository, please cite the following papers (journal publications to be updated, currently under review):
