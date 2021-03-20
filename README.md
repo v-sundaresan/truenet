@@ -12,6 +12,7 @@ PyTorch=1.5.0
 
 <img
 src="images/main_architecture_final.png"
+alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
 />
 
 ## To install the truenet tool
