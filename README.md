@@ -32,12 +32,14 @@ truenet <subcommand> --help (e.g. truenet train --help)
 ## Running truenet
 
 Triplanar ensemble U-Net model, v1.0.1
-   
+
+```  
 Subcommands available:
     - truenet train         Training a TrUE-Net model from scratch
     - truenet evaluate      Applying a saved/pretrained TrUE-Net model for testing
     - truenet fine_tune     Fine-tuning a saved/pretrained TrUE-Net model from scratch
     - truenet loo_validate  Leave-one-out validation of TrUE-Net model
+```
 
 ### Training the TrUE-Net model
 
