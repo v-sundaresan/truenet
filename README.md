@@ -10,7 +10,7 @@ PyTorch=1.5.0
 
 ## TrUE-Net architecture:
 
-<img_src=https://git.fmrib.ox.ac.uk/vaanathi/truenet/-/blob/master/main_architecture_final.png>
+<img_src="https://git.fmrib.ox.ac.uk/vaanathi/truenet/-/blob/master/main_architecture_final.png">
 
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
