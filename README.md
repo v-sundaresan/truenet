@@ -10,7 +10,7 @@ PyTorch=1.5.0
 
 ## TrUE-Net architecture:
 
-!(main_architecture.png)
+!(main_architecture_final.png)
 
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
@@ -45,8 +45,8 @@ Usage: truenet train -i <input_directory> -m <model_directory> [options]
 ```
 
 Compulsory arguments:
-       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training
-       -m, --model_dir               Path to the directory where the training model or weights need to be saved
+       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training <br/>
+       -m, --model_dir               Path to the directory where the training model or weights need to be saved \
    
 Optional arguments:
        -tr_prop, --train_prop        Proportion of data used for training [0, 1]. The rest will be used for validation [default = 0.8]
