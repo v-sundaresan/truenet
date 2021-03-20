@@ -45,11 +45,11 @@ truenet train: training the TrUE-Net model from scratch, v1.0.1
 
 ```
 Usage: truenet train -i <input_directory> -m <model_directory> [options] 
-```
+
 
 Compulsory arguments:
-       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training <br/>
-       -m, --model_dir               Path to the directory where the training model or weights need to be saved \
+       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training 
+       -m, --model_dir               Path to the directory where the training model or weights need to be saved 
    
 Optional arguments:
        -tr_prop, --train_prop        Proportion of data used for training [0, 1]. The rest will be used for validation [default = 0.8]
@@ -72,6 +72,8 @@ Optional arguments:
        -cp_n, --cp_everyn_N          If -cv_type=everyN, the N value [default = 10]
        -da, --data_augmentation      Applying data augmentation [default = True]
        -af, --aug_factor             Data inflation factor for augmentation [default = 2]
+
+```
        -v, --verbose                 Display debug messages [default = False]
 
 
