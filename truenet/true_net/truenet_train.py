@@ -118,6 +118,7 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
     batch_factor = train_params['Batch_factor'] 
     patience = train_params['Patience']
     aug_factor = train_params['Aug_factor']
+    save_resume = train_params['SaveResume']
     
     early_stopping = truenet_utils.EarlyStoppingModelCheckpointing(patience, verbose=verbose)
         
@@ -130,8 +131,29 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
     val_data_dict = truenet_data_preparation.create_data_array(val_names_dicts, is_weighted=weighted, plane=mode)
     valdata = truenet_data_preparation.get_slices_from_data_with_aug(val_data_dict, plane=mode, test=1,
                                                                      weighted=weighted)
+
+    start_epoch = 1
+    if save_resume:
+        try:
+            if dir_checkpoint is not None:
+                ckpt_path = os.path.join(dir_checkpoint, 'tmp_model_' + mode + '.pth')
+            else:
+                ckpt_path = os.path.join(os.getcwd(), 'tmp_model_' + mode + '.pth')
+            checkpoint_resumetraining = torch.load(ckpt_path)
+            model.load_state_dict(checkpoint_resumetraining['model_state_dict'])
+            optimizer.load_state_dict(checkpoint_resumetraining['optimizer_state_dict'])
+            scheduler.load_state_dict(checkpoint_resumetraining['scheduler_state_dict'])
+            start_epoch = checkpoint_resumetraining['epoch'] + 1
+            losses_train = checkpoint_resumetraining['loss_train']
+            losses_val = checkpoint_resumetraining['loss_val']
+            dice_val = checkpoint_resumetraining['dice_val']
+            best_val_dice = checkpoint_resumetraining['best_val_dice']
+        except:
+            if verbose:
+                print('Not found any model to load and resume training!', flush=True)
+
     print('Training started!!.......................................')
-    for epoch in range(1, num_epochs+1):
+    for epoch in range(start_epoch, num_epochs+1):
         model.train()
         running_loss = 0.0
         batch_count = 0   
@@ -212,7 +234,23 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
         losses_train.append(av_loss)        
         losses_val.append(val_av_loss)
         dice_val.append(val_av_dice)
-        
+
+        if save_resume:
+            if dir_checkpoint is not None:
+                ckpt_path = os.path.join(dir_checkpoint, 'tmp_model_' + mode + '.pth')
+            else:
+                ckpt_path = os.path.join(os.getcwd(), 'tmp_model_' + mode + '.pth')
+            torch.save({
+                'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict':scheduler.state_dict(),
+                'loss_train': losses_train,
+                'loss_val': losses_val,
+                'dice_val': dice_val,
+                'best_val_dice': best_val_dice
+            }, ckpt_path)
+
         if save_checkpoint:
             np.savez(os.path.join(dir_checkpoint,'losses_' + mode + '.npz'), train_loss=losses_train, val_loss=losses_val)
             np.savez(os.path.join(dir_checkpoint,'validation_dice_' + mode + '.npz'), dice_val=dice_val)
@@ -226,10 +264,24 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
 
         if early_stopping.early_stop: 
             print('Patience Reached - Early Stopping Activated', flush=True)
+            if save_resume:
+                if dir_checkpoint is not None:
+                    ckpt_path = os.path.join(dir_checkpoint, 'tmp_model_' + mode + '.pth')
+                else:
+                    ckpt_path = os.path.join(os.getcwd(), 'tmp_model_' + mode + '.pth')
+                os.remove(ckpt_path)
             return model
 #             sys.exit('Patience Reached - Early Stopping Activated')
 
         torch.cuda.empty_cache()  # Clear memory cache
+
+    if save_resume:
+        if dir_checkpoint is not None:
+            ckpt_path = os.path.join(dir_checkpoint, 'tmp_model_' + mode + '.pth')
+        else:
+            ckpt_path = os.path.join(os.getcwd(), 'tmp_model_' + mode + '.pth')
+        os.remove(ckpt_path)
+
     return model
         
 
