@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import os
 from truenet.true_net import (truenet_train_function, truenet_test_function,
-                              truenet_loo_validate, truenet_finetune)
+                              truenet_cross_validate, truenet_finetune)
 import glob
 
 #=========================================================================================
@@ -105,7 +105,7 @@ def train(args):
                           'gt_path': gt_path_name,
                           'gmdist_path': gmdist_path_name,
                           'ventdist_path': ventdist_path_name,
-                          'basename':basename}
+                          'basename': basename}
         subj_name_dicts.append(subj_name_dict)
 
     if isinstance(args.init_learng_rate, float) is False:
@@ -165,7 +165,9 @@ def train(args):
                        'Patience': args.early_stop_val,
                        'Aug_factor': args.aug_factor,
                        'EveryN': args.cp_everyn_N,
-                       'Nclass': args.num_classes}
+                       'Nclass': args.num_classes,
+                       'SaveResume': args.save_resume_training
+                       }
 
     if args.save_full_model == 'True':
         save_wei = False
@@ -227,11 +229,8 @@ def evaluate(args):
     if args.num_classes < 1:
         raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
-    # Create the training parameters dictionary
-    eval_params = {'Nclass': args.num_classes,
-                   'EveryN': args.cp_everyn_N}
-
     if args.pretrained_model == 'True':
+        model_name = None
         if args.pretrained_model_name == 'mwsc':
             model_dir = 'MWSC/model/path'
         elif args.pretrained_model_name == 'ukbb':
@@ -239,21 +238,37 @@ def evaluate(args):
         else:
             raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
     else:
-        if os.path.isdir(args.model_dir) is False:
-            raise ValueError(args.model_dir + ' does not appear to be a valid directory')
+        if os.path.isfile(args.model_name + '_axial.pth') is False or \
+                os.path.isfile(args.model_name + '_sagittal.pth') is False or \
+                os.path.isfile(args.model_name + '_coronal.pth') is False:
+            raise ValueError('In directory ' + os.path.dirname(args.model_name) +
+                             ', ' + os.path.basename(args.model_name) + '_axial.pth/' +
+                             os.path.basename(args.model_name) + '_sagittal.pth/' +
+                             os.path.basename(args.model_name) + '_coronal.pth/ ' +
+                              'does not appear to be a valid model file')
         else:
-            model_dir = args.model_dir
+            model_dir = os.path.dirname(args.model_name)
+            model_name = os.path.basename(args.model_name)
 
-    if args.cp_load_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
+    # Create the training parameters dictionary
+    eval_params = {'Nclass': args.num_classes,
+                   'EveryN': args.cp_everyn_N,
+                   'Pretrained': args.pretrained_model,
+                   'Modelname': model_name
+                   }
 
-    if args.cp_load_type == 'everyN':
+    if args.cp_load_type not in ['best', 'last', 'specific']:
+        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, specific')
+
+    if args.cp_load_type == 'specific':
+        args.cp_load_type = 'everyN'
         if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
+            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "specific"!')
 
     # Test main function call
     truenet_test_function.main(subj_name_dicts, eval_params, intermediate=args.intermediate,
-                               model_dir=model_dir, load_case=args.cp_load_type, output_dir=out_dir, verbose=args.verbose)
+                               model_dir=model_dir, load_case=args.cp_load_type, output_dir=out_dir,
+                               verbose=args.verbose)
 
 
 ##########################################################################################
@@ -391,6 +406,33 @@ def fine_tune(args):
     if args.num_classes < 1:
         raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
+    if args.save_full_model == 'True':
+        save_wei = False
+    else:
+        save_wei = True
+
+    if args.pretrained_model == 'True':
+        model_name = None
+        if args.pretrained_model_name == 'mwsc':
+            model_dir = 'MWSC/model/path'
+        elif args.pretrained_model_name == 'ukbb':
+            model_dir = 'UKBB/model/path'
+        else:
+            raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
+    else:
+        if os.path.isfile(args.model_name + '_axial.pth') is False or \
+                os.path.isfile(args.model_name + '_sagittal.pth') is False or \
+                os.path.isfile(args.model_name + '_coronal.pth') is False:
+            raise ValueError('In directory ' + os.path.dirname(args.model_name) +
+                             ', ' + os.path.basename(args.model_name) + '_axial.pth/' +
+                             os.path.basename(args.model_name) + '_sagittal.pth/' +
+                             os.path.basename(args.model_name) + '_coronal.pth/ ' +
+                              'does not appear to be a valid model file')
+        else:
+            model_dir = os.path.dirname(args.model_name)
+            model_name = os.path.basename(args.model_name)
+
+
     # Create the fine-tuning parameters dictionary
     finetuning_params = {'Finetuning_learning_rate': args.init_learng_rate,
                          'Optimizer': args.optimizer,
@@ -409,25 +451,11 @@ def fine_tune(args):
                          'Nclass': args.num_classes,
                          'Finetuning_layers': args.ft_layers,
                          'Load_type': args.cp_load_type,
-                         'EveryNload': args.cpload_everyn_N}
-
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.pretrained_model == 'True':
-        if args.pretrained_model_name == 'mwsc':
-            model_dir = 'MWSC/model/path'
-        elif args.pretrained_model_name == 'ukbb':
-            model_dir = 'UKBB/model/path'
-        else:
-            raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
-    else:
-        if os.path.isdir(args.model_dir) is False:
-            raise ValueError(args.model_dir + ' does not appear to be a valid directory')
-        else:
-            model_dir = args.model_dir
+                         'EveryNload': args.cpload_everyn_N,
+                         'Pretrained': args.pretrained_model,
+                         'Modelname': model_name,
+                         'SaveResume': args.save_resume_training
+                         }
 
     if args.cp_save_type not in ['best', 'last', 'everyN']:
         raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
@@ -445,7 +473,7 @@ def fine_tune(args):
 # Define the loo_validate (leave-one-out validation) sub-command for truenet
 ##########################################################################################
 
-def loo_validate(args):
+def cross_validate(args):
     '''
     :param args: Input arguments from argparse
     '''
@@ -471,6 +499,12 @@ def loo_validate(args):
 
     # if os.path.isdir(model_dir) is False:
     #     raise ValueError(model_dir + ' does not appear to be a valid directory')
+
+    if args.cv_fold < 1:
+        raise ValueError('Number of folds cannot be 0 or negative')
+
+    if args.resume_from_fold < 1:
+        raise ValueError('Fold to resume cannot be 0 or negative')
 
     if args.loss_function == 'weighted':
         if args.gmdist_dir is None:
@@ -579,23 +613,48 @@ def loo_validate(args):
     if args.num_classes < 1:
         raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
-    # Create the loo_validate parameters dictionary
-    loo_params = {'Learning_rate': args.init_learng_rate,
-                  'Optimizer': args.optimizer,
-                  'Epsilon' :args.epsilon,
-                  'Momentum' : args.momentum,
-                  'LR_Milestones': args.lr_sch_mlstone,
-                  'LR_red_factor': args.lr_sch_gamma,
-                  'Acq_plane': args.acq_plane,
-                  'Train_prop': args.train_prop,
-                  'Batch_size': args.batch_size,
-                  'Num_epochs': args.num_epochs,
-                  'Batch_factor': args.batch_factor,
-                  'Patience': args.early_stop_val,
-                  'Aug_factor': args.aug_factor,
-                  'Nclass': args.num_classes}
+    if len(subj_name_dicts) < args.cv_fold:
+        raise ValueError('Number of folds is greater than number of subjects!')
 
-    # LOO validation main function call
-    truenet_loo_validate.main(subj_name_dicts, loo_params, aug=args.data_augmentation, weighted=weighted,
-                              intermediate=args.intermediate, save_cp=False, verbose=args.verbose, dir_cp=out_dir,
-                              output_dir=out_dir)
+    if args.resume_from_fold > args.cv_fold:
+        raise ValueError('The fold to resume CV cannot be higher than the total number of folds specified!')
+
+    # Create the loo_validate parameters dictionary
+    cv_params = {'Learning_rate': args.init_learng_rate,
+                 'fold': args.cv_fold,
+                 'res_fold': args.resume_from_fold,
+                 'Optimizer': args.optimizer,
+                 'Epsilon':args.epsilon,
+                 'Momentum': args.momentum,
+                 'LR_Milestones': args.lr_sch_mlstone,
+                 'LR_red_factor': args.lr_sch_gamma,
+                 'Acq_plane': args.acq_plane,
+                 'Train_prop': args.train_prop,
+                 'Batch_size': args.batch_size,
+                 'Num_epochs': args.num_epochs,
+                 'Batch_factor': args.batch_factor,
+                 'Patience': args.early_stop_val,
+                 'Aug_factor': args.aug_factor,
+                 'Nclass': args.num_classes,
+                 'EveryN': args.cp_everyn_N,
+                 'SaveResume': args.save_resume_training
+                 }
+
+    if args.save_full_model == 'True':
+        save_wei = False
+    else:
+        save_wei = True
+
+    if args.cp_save_type not in ['best', 'last', 'everyN']:
+        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
+
+    if args.cp_save_type == 'everyN':
+        if args.cp_everyn_N is None:
+            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
+
+    # Cross-validation main function call
+    truenet_cross_validate.main(subj_name_dicts, cv_params, aug=args.data_augmentation, weighted=weighted,
+                                intermediate=args.intermediate, save_cp=args.save_checkpoint, save_wei=save_wei,
+                                save_case=args.cp_save_type, verbose=args.verbose, dir_cp=out_dir,
+                                output_dir=out_dir)
+
