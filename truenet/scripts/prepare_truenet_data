@@ -1,0 +1,85 @@
+#!/bin/sh
+#   Copyright (C) 2021 University of Oxford
+#   SHCOPYRIGHT
+#set -e
+#set -x
+
+######
+
+if [ $# -lt 3 ] ; then
+  echo "Usage: `basename $0` <FLAIR_image_name> <T1_image_name> <output_basename>"
+  echo " "
+  echo "The script applies the preprocessing pipeline on FLAIR, T1 and WM mask to be used in FSL truenet with a specified output basename"
+  echo "FLAIR_image_name = 	name of the input unprocessed FLAIR image"
+  echo "T1_image_name = 	name of the input unprocessed T1 image"
+  echo "output_basename = 	name to be used for the processed FLAIR and T1 images (along with the absolute path); output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved"
+  exit 0
+fi
+
+flairfile=$1
+flairimg=`basename ${flairfile} .nii.gz`
+flairdir=`dirname ${flairfile} `
+pushd $flairdir > /dev/null
+flairdir=`pwd`
+popd > /dev/null
+
+
+t1file=$2
+t1img=`basename ${t1file} .nii.gz`
+t1dir=`dirname ${t1file} `
+pushd $t1dir > /dev/null
+t1dir=`pwd`
+popd > /dev/null
+
+outbasename=$3
+outname=`basename ${outbasename}`
+outdir=`dirname ${outbasename}`
+pushd $outdir > /dev/null
+outdir=`pwd`
+popd > /dev/null
+
+# SPECIFY ORIGINAL DIRECTORY
+origdir=`pwd`
+
+# CREATE TEMPORARY DIRECTORY
+logID=`echo $(date | awk '{print $1 $2 $3}' |  sed 's/://g')`
+TMPVISDIR=`mktemp -d ${outdir}/truenet_${logID}_${flairimg}_${t1img}_XXXXXX`
+
+# REORIENTING FLAIR AND T1 IMAGES TO STD SPACE
+$FSLDIR/bin/fslreorient2std ${flairfile}.nii.gz ${TMPVISDIR}/FLAIR.nii.gz
+$FSLDIR/bin/fslreorient2std ${t1file}.nii.gz ${TMPVISDIR}/T1.nii.gz
+
+# PREPROCESSING OF FLAIR IMAGE
+$FSLDIR/bin/bet ${TMPVISDIR}/FLAIR.nii.gz ${TMPVISDIR}/FLAIR_brain.nii.gz
+$FSLDIR/bin/fast -B --nopve ${TMPVISDIR}/FLAIR_brain.nii.gz 
+${FSLDIR}/bin/imcp ${TMPVISDIR}/FLAIR_brain_restore.nii.gz ${outdir}/${outname}_FLAIR.nii.gz
+
+# APPLYING FSL_ANAT ON THE REORIENTED T1 IMAGE
+$FSLDIR/bin/fsl_anat --nosubcortseg -i ${TMPVISDIR}/T1.nii.gz
+
+$FSLDIR/bin/flirt -dof 6 -in ${TMPVISDIR}/T1.anat/T1_biascorr_brain.nii.gz -ref ${TMPVISDIR}/FLAIR_brain.nii.gz -out ${outdir}/${outname}_T1.nii.gz
+$FSLDIR/bin/flirt -dof 6 -in ${TMPVISDIR}/T1.anat/T1_biascorr_brain.nii.gz -ref ${TMPVISDIR}/FLAIR_brain.nii.gz -omat ${TMPVISDIR}/${outname}_T1_2FLAIR.mat
+
+# GETTING WM MASK FOR POSTPROCESSING
+$FSLDIR/bin/make_bianca_mask ${TMPVISDIR}/T1.anat/T1_biascorr ${TMPVISDIR}/T1.anat/T1_fast_pve_0.nii.gz ${TMPVISDIR}/T1.anat/MNI_to_T1_nonlin_field.nii.gz 0
+$FSLDIR/bin/flirt -dof 6 -in ${TMPVISDIR}/T1.anat/T1_biascorr_bianca_mask.nii.gz -ref ${TMPVISDIR}/FLAIR_brain.nii.gz -applyxfm -init ${TMPVISDIR}/${outname}_T1_2FLAIR.mat -out ${TMPVISDIR}/${outname}_WMmask.nii.gz
+$FSLDIR/bin/fslmaths ${TMPVISDIR}/${outname}_WMmask.nii.gz -thr 0.5 -bin ${outdir}/${outname}_WMmask.nii.gz
+
+# REMOVES TEMPORARY DIRECTORY 
+rm -r ${TMPVISDIR}
+
+exit 0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
