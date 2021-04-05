@@ -26,6 +26,7 @@ We used a weighted sum of the voxel-wise cross-entropy loss function and the Dic
        width=600
        />
 </p>
+
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
 ``` 
