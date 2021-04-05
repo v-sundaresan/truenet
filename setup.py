@@ -7,6 +7,6 @@ setup(name='truenet',
 	description='DL method for WMH segmentation',
 	author='Vaanathi Sundaresan',
 	install_requires=install_requires,
-    scripts=['truenet/scripts/truenet'],
+    scripts=['truenet/scripts/truenet', 'truenet/scripts/prepare_truenet_data'],
 	packages=find_packages(),
 	include_package_data=True)
