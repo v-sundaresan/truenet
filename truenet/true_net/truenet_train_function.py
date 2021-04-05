@@ -72,7 +72,10 @@ def main(sub_name_dicts, tr_params, aug=True, weighted=True,
     else:
         raise ValueError("Invalid optimiser choice provided! Valid options: 'adam', 'sgd'")
         
-    criterion = truenet_loss_functions.CombinedLoss()
+    if nclass == 2:
+        criterion = truenet_loss_functions.CombinedLoss()
+    else:
+        criterion = truenet_loss_functions.CombinedMultiLoss(nclasses=nclass)
     
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
