@@ -13,10 +13,10 @@ def help_descs():
         "truenet: Triplanar ensemble U-Net model, v" + str(version) + "\n" 
         "   \n" 
         "Sub-commands available:\n" 
-        "       truenet train         Training a TrUE-Net model from scratch\n"
-        "       truenet evaluate      Applying a saved/pretrained TrUE-Net model for testing\n"
-        "       truenet fine_tune     Fine-tuning a saved/pretrained TrUE-Net model\n"
-        "       truenet loo_validate  Leave-one-out validation of TrUE-Net model\n"
+        "       truenet train           Training a TrUE-Net model from scratch\n"
+        "       truenet evaluate        Applying a saved/pretrained TrUE-Net model for testing\n"
+        "       truenet fine_tune       Fine-tuning a saved/pretrained TrUE-Net model\n"
+        "       truenet cross_validate  Cross-validation of TrUE-Net model\n"
         "   \n"
         "   \n"
         "For detailed help regarding the options for each command,\n"
@@ -117,10 +117,10 @@ def help_descs():
         '       -v, --verbose                         Display debug messages [default = False]\n'
         '   \n',
 
-        'loo_validate' :
-        'truenet loo_validate: leave-one-out validation of the TrUE-Net model, v' + str(version) + '\n'                                                                                            
+        'cross_validate' :
+        'truenet cross_validate: cross-validation of the TrUE-Net model, v' + str(version) + '\n'                                                                                            
         '   \n'
-        'Usage: truenet loo_validate -i <input_directory> -o <output_directory> [options]\n'
+        'Usage: truenet cross_validate -i <input_directory> -o <output_directory> [options]\n'
         '   \n'
         '   \n'
         'Compulsory arguments:\n'
@@ -159,10 +159,10 @@ def desc_descs():
         "truenet: Triplanar ensemble U-Net model, v" + str(version) + "\n"
         "   \n"
         "Sub-commands available:\n"
-        "       truenet train         Training a TrUE-Net model from scratch\n"
-        "       truenet evaluate      Applying a saved/pretrained TrUE-Net model for testing\n"
-        "       truenet fine_tune     Fine-tuning a saved/pretrained TrUE-Net model from scratch\n"
-        "       truenet loo_validate  Leave-one-out validation of TrUE-Net model\n"
+        "       truenet train           Training a TrUE-Net model from scratch\n"
+        "       truenet evaluate        Applying a saved/pretrained TrUE-Net model for testing\n"
+        "       truenet fine_tune       Fine-tuning a saved/pretrained TrUE-Net model \n"
+        "       truenet cross_validate  Cross-validation of TrUE-Net model\n"
         "   \n",
 
         'train' :
@@ -192,11 +192,11 @@ def desc_descs():
         '\'<subj_name>_FLAIR.nii.gz\' and \'<subj_name>_T1.nii.gz\'respectively\n'
         '   \n',
 
-        'loo_validate':
+        'cross_validate':
         '   \n'
         'truenet: Triplanar ensemble U-Net model, v' + str(version) + '\n'
         '   \n'
-        'The \'loo_validate\' command performs leave-one-out validation of the TrUE-Net model on the\n'
+        'The \'cross_validate\' command performs cross-validation of the TrUE-Net model on the\n'
         'subjects specified in the input directory. The FLAIR and T1 volumes should be named as\n'
         '\'<subj_name>_FLAIR.nii.gz\' and \'<subj_name>_T1.nii.gz\'respectively\n'
         '   \n'
