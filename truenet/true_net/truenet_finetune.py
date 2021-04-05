@@ -47,49 +47,25 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     model_coronal = nn.DataParallel(model_coronal)
 
     load_case = ft_params['Load_type']
+    pretrained = ft_params['Pretrained']
 
-    if load_case == 'last':
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir,'Truenet_model_weights_beforeES_axial.pth')))
-            model_sagittal.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_beforeES_sagittal.pth')))
-            model_coronal.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_beforeES_coronal.pth')))
-        except:
-            try:
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
-            except ImportError:
-                raise ImportError('Model filename in incorrect format. Correct format: "Truenet_model_weights_beforeES_<plane>.pth" for model weights, or "Truenet_model_beforeES_<plane>.pth" for full model')
-    elif load_case == 'best':
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_axial.pth')))
-            model_sagittal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_sagittal.pth')))
-            model_coronal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_coronal.pth')))
-        except:
-            try:
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
-            except ImportError:
-                raise ImportError(
-                    'Incorrect filename. Save as "Truenet_model_weights_bestdice_<plane>.pth" for model weights, "Truenet_model_bestdice_<plane>.pth" for full model')
-    elif load_case == 'everyN':
-        cpn = ft_params['EveryNload']
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_axial.pth')))
-            model_sagittal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_sagittal.pth')))
-            model_coronal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_coronal.pth')))
-        except:
+    if pretrained:
+        if load_case == 'last':
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth'))
+            model_axial.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth'))
+            model_sagittal.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_coronal.pth'))
+            model_coronal.load_state_dict(cp['model_state_dict'])
+        elif load_case == 'best':
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth'))
+            model_axial.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth'))
+            model_sagittal.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth'))
+            model_coronal.load_state_dict(cp['model_state_dict'])
+        elif load_case == 'specific':
+            cpn = ft_params['EveryN']
             try:
                 cp = torch.load(os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_axial.pth'))
                 model_axial.load_state_dict(cp['model_state_dict'])
@@ -99,9 +75,22 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                 model_coronal.load_state_dict(cp['model_state_dict'])
             except ImportError:
                 raise ImportError(
-                    'Incorrect filename. Save as "Truenet_model_weights_beforeES_<plane>.pth" for model weights, "Truenet_model_beforeES_<plane>.pth" for full model')
+                    'Incorrect N value provided for the available pretrained models')
+        else:
+            raise ValueError("Invalid loading condition provided! Valid options: best, specific, last")
     else:
-        raise ValueError("Invalid saving condition provided! Valid options: best, everyN, last")
+        model_name = ft_params['Modelname']
+        try:
+            cp = torch.load(os.path.join(model_dir, model_name + '_axial.pth'))
+            model_axial.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, model_name + '_sagittal.pth'))
+            model_sagittal.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, model_name + '_coronal.pth'))
+            model_coronal.load_state_dict(cp['model_state_dict'])
+        except ImportError:
+            raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth/' +
+                              model_name + '_sagittal.pth/' + model_name + '_coronal.pth/ ' +
+                              'does not appear to be a valid model file')
 
     layers_to_ft = ft_params['Finetuning_layers'] # list of numbers [1,8]
     optim_type = ft_params['Optimizer'] # adam, sgd
@@ -153,12 +142,15 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     else:
         raise ValueError("Invalid optimiser choice provided! Valid options: 'adam', 'sgd'")
         
-    criterion = truenet_loss_functions.CombinedLoss()
+    if nclass == 2:
+        criterion = truenet_loss_functions.CombinedLoss()
+    else:
+        criterion = truenet_loss_functions.CombinedMultiLoss(nclasses=nclass)
     
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
 
-    num_val_subs = max(int(len(sub_name_dicts) * (1-train_prop)),1)
+    num_val_subs = max(int(len(sub_name_dicts) * (1-train_prop)), 1)
     train_name_dicts, val_name_dicts, val_ids = truenet_utils.select_train_val_names(sub_name_dicts,
                                                                                            num_val_subs)
 
