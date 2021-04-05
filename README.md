@@ -45,10 +45,11 @@ We used both T1-weighted and FLAIR images as inputs for the model. We reoriented
 
 We obtained the white matter mask from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and make bianca mask command in FSL BIANCA (Griffanti et al., 2016).
 
+#### prepare_truenet_data
 ```
-prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
+Usage: prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
  
-the script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
+The script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
 FLAIR_image_name  	name of the input unprocessed FLAIR image
 T1_image_name 	name of the input unprocessed T1 image
 output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); 
