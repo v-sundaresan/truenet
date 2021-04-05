@@ -51,8 +51,8 @@ prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
 the script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
 FLAIR_image_name  	name of the input unprocessed FLAIR image
 T1_image_name 	name of the input unprocessed T1 image
-output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); output_basename_FLAIR.nii.gz, 
-output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
+output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); 
+                     output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
 ```
 
 ## Running truenet
