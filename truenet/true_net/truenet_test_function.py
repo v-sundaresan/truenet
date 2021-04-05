@@ -31,6 +31,7 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = eval_params['Nclass']
+    pretrained = eval_params['Pretrained']
 
     model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
     model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
@@ -43,48 +44,23 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     model_sagittal = nn.DataParallel(model_sagittal)
     model_coronal = nn.DataParallel(model_coronal)
 
-    if load_case == 'last':
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir,'Truenet_model_weights_beforeES_axial.pth')))
-            model_sagittal.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_beforeES_sagittal.pth')))
-            model_coronal.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_beforeES_coronal.pth')))
-        except:
-            try:
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
-            except ImportError:
-                raise ImportError('Model filename in incorrect format. Correct format: "Truenet_model_weights_beforeES_<plane>.pth" for model weights, or "Truenet_model_beforeES_<plane>.pth" for full model')
-    elif load_case == 'best':
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_axial.pth')))
-            model_sagittal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_sagittal.pth')))
-            model_coronal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_bestdice_coronal.pth')))
-        except:
-            try:
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
-            except ImportError:
-                raise ImportError(
-                    'Incorrect filename. Save as "Truenet_model_weights_bestdice_<plane>.pth" for model weights, "Truenet_model_bestdice_<plane>.pth" for full model')
-    elif load_case == 'everyN':
-        cpn = eval_params['EveryN']
-        try:
-            model_axial.load_state_dict(torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_axial.pth')))
-            model_sagittal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_sagittal.pth')))
-            model_coronal.load_state_dict(
-                torch.load(os.path.join(model_dir, 'Truenet_model_weights_epoch' + str(cpn) + '_coronal.pth')))
-        except:
+    if pretrained:
+        if load_case == 'last':
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth'))
+            model_axial.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth'))
+            model_sagittal.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_coronal.pth'))
+            model_coronal.load_state_dict(cp['model_state_dict'])
+        elif load_case == 'best':
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth'))
+            model_axial.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth'))
+            model_sagittal.load_state_dict(cp['model_state_dict'])
+            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth'))
+            model_coronal.load_state_dict(cp['model_state_dict'])
+        elif load_case == 'everyN':
+            cpn = eval_params['EveryN']
             try:
                 cp = torch.load(os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_axial.pth'))
                 model_axial.load_state_dict(cp['model_state_dict'])
@@ -94,9 +70,31 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
                 model_coronal.load_state_dict(cp['model_state_dict'])
             except ImportError:
                 raise ImportError(
-                    'Incorrect filename. Save as "Truenet_model_weights_beforeES_<plane>.pth" for model weights, "Truenet_model_beforeES_<plane>.pth" for full model')
+                    'Incorrect N value provided for the available pretrained models')
+        else:
+            raise ValueError("Invalid saving condition provided! Valid options: best, specific, last")
     else:
-        raise ValueError("Invalid saving condition provided! Valid options: best, everyN, last")
+        model_name = eval_params['Modelname']
+
+        try:
+            model_axial.load_state_dict(
+                torch.load(os.path.join(model_dir, model_name + '_axial.pth')))
+            model_sagittal.load_state_dict(
+                torch.load(os.path.join(model_dir, model_name + '_sagittal.pth')))
+            model_coronal.load_state_dict(
+                torch.load(os.path.join(model_dir, model_name + '_coronal.pth')))
+        except:
+            try:
+                cp = torch.load(os.path.join(model_dir, model_name + '_axial.pth'))
+                model_axial.load_state_dict(cp['model_state_dict'])
+                cp = torch.load(os.path.join(model_dir, model_name + '_sagittal.pth'))
+                model_sagittal.load_state_dict(cp['model_state_dict'])
+                cp = torch.load(os.path.join(model_dir, model_name + '_coronal.pth'))
+                model_coronal.load_state_dict(cp['model_state_dict'])
+            except ImportError:
+                raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth/' +
+                                  model_name + '_sagittal.pth/' + model_name + '_coronal.pth/ ' +
+                                  'does not appear to be a valid model file')
 
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
