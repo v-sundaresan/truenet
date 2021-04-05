@@ -58,7 +58,7 @@ Subcommands available:
 #### truenet train: training the TrUE-Net model from scratch, v1.0.1
 
 ```
-Usage: truenet train -i <input_directory> -m <model_directory> [options] 
+Usage: truenet train -i <input_directory> -l <label_directory> -m <model_directory> [options] 
 
 
 Compulsory arguments:
@@ -127,7 +127,7 @@ Optional arguments:
 </p>
 
 ```
-Usage: truenet fine_tune -i <input_directory> -m <model_directory> -o <output_directory> [options]
+Usage: truenet fine_tune -i <input_directory> -l <label_directory> -m <model_directory> -o <output_directory> [options]
 
 Compulsory arguments:
        -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning
@@ -171,7 +171,7 @@ Optional arguments:
 #### truenet cross_validate: cross-validation of the TrUE-Net model, v1.0.1  
    
 ```
-Usage: truenet cross_validate -i <input_directory> -o <output_directory> [options]
+Usage: truenet cross_validate -i <input_directory> -l <label_directory> -o <output_directory> [options]
    
 Compulsory arguments:
        -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning
