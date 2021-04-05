@@ -116,7 +116,7 @@ Optional arguments:
 #### truenet fine_tune: training the TrUE-Net model from scratch, v1.0.1
 
 <img
-src="images/final_tuning_images.png"
+src="images/fine_tuning_images.png"
 alt="Layers for fine-tuning truenet model."
 />
 ```
