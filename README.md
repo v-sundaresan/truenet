@@ -125,6 +125,7 @@ Optional arguments:
        width=500
        />
 </p>
+
 ```
 Usage: truenet fine_tune -i <input_directory> -m <model_directory> -o <output_directory> [options]
 
