@@ -19,11 +19,13 @@ alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in indivi
 
 ### Applying spatial weights in the loss function:
 We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
+<p align="center">
 <img
 src="images/spatial_weight_map.png"
 alt="Spatial weight maps to be applied in the truenet loss function."
 width=600
 />
+</p>
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
 ``` 
@@ -115,12 +117,13 @@ Optional arguments:
 ### Fine-tuning the TrUE-Net model
 
 #### truenet fine_tune: training the TrUE-Net model from scratch, v1.0.1
-
+<p align="center">
 <img
 src="images/fine_tuning_images.png"
 alt="Layers for fine-tuning truenet model."
 width=500
 />
+</p>
 ```
 Usage: truenet fine_tune -i <input_directory> -m <model_directory> -o <output_directory> [options]
 
