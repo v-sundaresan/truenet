@@ -22,6 +22,7 @@ We used a weighted sum of the voxel-wise cross-entropy loss function and the Dic
 <img
 src="images/spatial_weight_map.png"
 alt="Spatial weight maps to be applied in the truenet loss function."
+width=200
 />
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
@@ -118,6 +119,7 @@ Optional arguments:
 <img
 src="images/fine_tuning_images.png"
 alt="Layers for fine-tuning truenet model."
+width=200
 />
 ```
 Usage: truenet fine_tune -i <input_directory> -m <model_directory> -o <output_directory> [options]
