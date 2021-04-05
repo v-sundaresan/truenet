@@ -12,12 +12,17 @@
 - FMRIB software library (FSL) 6.0
 
 ## TrUE-Net architecture:
-
 <img
 src="images/main_architecture_final.png"
 alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
 />
 
+### Applying spatial weights in the loss function:
+We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
+<img
+src="images/spatial_weight_map.png"
+alt="Spatial weight maps to be applied in the truenet loss function."
+/>
 ## To install the truenet tool
 Clone the git repository into your loacal directory and run:
 ``` 
@@ -110,6 +115,10 @@ Optional arguments:
 
 #### truenet fine_tune: training the TrUE-Net model from scratch, v1.0.1
 
+<img
+src="images/final_tuning_images.png"
+alt="Layers for fine-tuning truenet model."
+/>
 ```
 Usage: truenet fine_tune -i <input_directory> -m <model_directory> -o <output_directory> [options]
 
@@ -124,7 +133,7 @@ Optional arguments:
        -pmodel, --pretrained_model_name      Pre-trained model to be used: mwsc, ukbb [default = mwsc]
        -cpld_type, --cp_load_type            Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cpld_n, --cpload_everyn_N            If everyN option was chosen for loading a checkpoint, the N value [default = 10]
-       -ftlayers, --ft_layers                Layers to fine-tune starting from the decoder (e.g. 1 2 -> final two two decoder layers)
+       -ftlayers, --ft_layers                Layers to fine-tune starting from the decoder (e.g. 1 2 -> final two two decoder layers, refer to the figure above) 
        -tr_prop, --train_prop                Proportion of data used for fine-tuning [0, 1]. The rest will be used for validation [default = 0.8]
        -bfactor, --batch_factor              Number of subjects to be considered for each mini-epoch [default = 10]
        -loss, --loss_function                Applying spatial weights to loss function. Options: weighted, nweighted [default=weighted]
