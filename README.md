@@ -40,6 +40,19 @@ And for options and inputs for each sub-command, type:
 ```
 truenet <subcommand> --help (e.g. truenet train --help)
 ```
+## Preprocessing and preparing data for truenet
+We used both T1-weighted and FLAIR images as inputs for the model. We reoriented the images to the standard MNI space, performed skull-stripping FSL BET and bias field correction using FSL FAST. We registered the T1-weighted image to the FLAIR using linear rigid-body registration.
+
+We obtained the white matter mask from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and make bianca mask command in FSL BIANCA (Griffanti et al., 2016).
+
+```
+prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
+ 
+the script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
+FLAIR_image_name  	name of the input unprocessed FLAIR image
+T1_image_name 	name of the input unprocessed T1 image
+output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
+```
 
 ## Running truenet
 
