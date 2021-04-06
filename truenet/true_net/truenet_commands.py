@@ -232,9 +232,17 @@ def evaluate(args):
     if args.pretrained_model == 'True':
         model_name = None
         if args.pretrained_model_name == 'mwsc':
-            model_dir = 'MWSC/model/path'
+            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
+            if not os.path.exists(modeldir):
+                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+                if modeldir is None:
+                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
         elif args.pretrained_model_name == 'ukbb':
-            model_dir = 'UKBB/model/path'
+            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
+            if not os.path.exists(modeldir):
+                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+                if modeldir is None:
+                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
         else:
             raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
     else:
@@ -242,10 +250,10 @@ def evaluate(args):
                 os.path.isfile(args.model_name + '_sagittal.pth') is False or \
                 os.path.isfile(args.model_name + '_coronal.pth') is False:
             raise ValueError('In directory ' + os.path.dirname(args.model_name) +
-                             ', ' + os.path.basename(args.model_name) + '_axial.pth/' +
-                             os.path.basename(args.model_name) + '_sagittal.pth/' +
-                             os.path.basename(args.model_name) + '_coronal.pth/ ' +
-                              'does not appear to be a valid model file')
+                             ', ' + os.path.basename(args.model_name) + '_axial.pth or' +
+                             os.path.basename(args.model_name) + '_sagittal.pth or' +
+                             os.path.basename(args.model_name) + '_coronal.pth ' +
+                             'does not appear to be a valid model file')
         else:
             model_dir = os.path.dirname(args.model_name)
             model_name = os.path.basename(args.model_name)
@@ -414,9 +422,17 @@ def fine_tune(args):
     if args.pretrained_model == 'True':
         model_name = None
         if args.pretrained_model_name == 'mwsc':
-            model_dir = 'MWSC/model/path'
+            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
+            if not os.path.exists(modeldir):
+                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+                if modeldir is None:
+                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
         elif args.pretrained_model_name == 'ukbb':
-            model_dir = 'UKBB/model/path'
+            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
+            if not os.path.exists(modeldir):
+                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+                if modeldir is None:
+                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
         else:
             raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
     else:
@@ -424,9 +440,9 @@ def fine_tune(args):
                 os.path.isfile(args.model_name + '_sagittal.pth') is False or \
                 os.path.isfile(args.model_name + '_coronal.pth') is False:
             raise ValueError('In directory ' + os.path.dirname(args.model_name) +
-                             ', ' + os.path.basename(args.model_name) + '_axial.pth/' +
-                             os.path.basename(args.model_name) + '_sagittal.pth/' +
-                             os.path.basename(args.model_name) + '_coronal.pth/ ' +
+                             ', ' + os.path.basename(args.model_name) + '_axial.pth or' +
+                             os.path.basename(args.model_name) + '_sagittal.pth or' +
+                             os.path.basename(args.model_name) + '_coronal.pth ' +
                               'does not appear to be a valid model file')
         else:
             model_dir = os.path.dirname(args.model_name)
