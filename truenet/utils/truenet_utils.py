@@ -6,6 +6,7 @@ import numpy as np
 import random
 import os
 import torch
+from collections import OrderedDict
 
 #=========================================================================================
 # Truenet general utility functions
@@ -54,6 +55,24 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
             for param in child.parameters():
                 param.requires_grad = False
                 
+    return model
+
+
+def loading_model(model_name, model, mode='weights'):
+    if mode == 'weights':
+        axial_state_dict = torch.load(model_name)
+    else:
+        ckpt = torch.load(model_name)
+        axial_state_dict = ckpt['model_state_dict']
+
+    new_axial_state_dict = OrderedDict()
+    for key, value in axial_state_dict.items():
+        if 'module.' in key[:7]:
+            name = key  # remove `module.`
+        else:
+            name = 'module.' + key
+        new_axial_state_dict[name] = value
+    model.load_state_dict(new_axial_state_dict)
     return model
 
 
@@ -146,6 +165,10 @@ class EarlyStoppingModelCheckpointing:
         else:
             if self.verbose:
                 print('Validation loss increased; Exiting without saving the model ...')
+
+
+
+
 
 
 
