@@ -8,6 +8,7 @@ import torch.nn as nn
 import os
 import nibabel as nib
 from truenet.true_net import (truenet_model, truenet_evaluate, truenet_data_postprocessing)
+from truenet.utils import truenet_utils
 
 #=========================================================================================
 # Truenet main test function
@@ -46,28 +47,34 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
 
     if pretrained:
         if load_case == 'last':
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth'))
-            model_axial.load_state_dict(cp['model_state_dict'])
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth'))
-            model_sagittal.load_state_dict(cp['model_state_dict'])
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_beforeES_coronal.pth'))
-            model_coronal.load_state_dict(cp['model_state_dict'])
+            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth')
+            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+
+            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+
+            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_coronalal.pth')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
         elif load_case == 'best':
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth'))
-            model_axial.load_state_dict(cp['model_state_dict'])
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth'))
-            model_sagittal.load_state_dict(cp['model_state_dict'])
-            cp = torch.load(os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth'))
-            model_coronal.load_state_dict(cp['model_state_dict'])
+            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth')
+            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+
+            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+
+            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
         elif load_case == 'everyN':
             cpn = eval_params['EveryN']
             try:
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
+                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_axial.pth')
+                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+
+                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_sagittal.pth')
+                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+
+                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_coronal.pth')
+                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
             except ImportError:
                 raise ImportError(
                     'Incorrect N value provided for the available pretrained models')
@@ -77,23 +84,27 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
         model_name = eval_params['Modelname']
 
         try:
-            model_axial.load_state_dict(
-                torch.load(os.path.join(model_dir, model_name + '_axial.pth')))
-            model_sagittal.load_state_dict(
-                torch.load(os.path.join(model_dir, model_name + '_sagittal.pth')))
-            model_coronal.load_state_dict(
-                torch.load(os.path.join(model_dir, model_name + '_coronal.pth')))
+            model_path = os.path.join(model_dir, model_name + '_axial.pth')
+            model_axial = truenet_utils.loading_model(model_path, model_axial)
+
+            model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
+
+            model_path = os.path.join(model_dir, model_name + '_coronal.pth')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal)
         except:
             try:
-                cp = torch.load(os.path.join(model_dir, model_name + '_axial.pth'))
-                model_axial.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, model_name + '_sagittal.pth'))
-                model_sagittal.load_state_dict(cp['model_state_dict'])
-                cp = torch.load(os.path.join(model_dir, model_name + '_coronal.pth'))
-                model_coronal.load_state_dict(cp['model_state_dict'])
+                model_path = os.path.join(model_dir, model_name + '_axial.pth')
+                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+
+                model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
+                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+
+                model_path = os.path.join(model_dir, model_name + '_coronal.pth')
+                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
             except ImportError:
-                raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth/' +
-                                  model_name + '_sagittal.pth/' + model_name + '_coronal.pth/ ' +
+                raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
+                                  model_name + '_sagittal.pth or' + model_name + '_coronal.pth or ' +
                                   'does not appear to be a valid model file')
 
     if verbose:
