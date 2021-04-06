@@ -108,7 +108,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                 model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
             except ImportError:
                 raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
-                                  model_name + '_sagittal.pth or' + model_name + '_coronal.pth or ' +
+                                  model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
                                   'does not appear to be a valid model file')
 
     layers_to_ft = ft_params['Finetuning_layers']  # list of numbers [1,8]
