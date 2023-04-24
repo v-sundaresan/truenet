@@ -109,6 +109,8 @@ Optional arguments:
 
 ### Testing the TrUE-Net model
 
+### The pretrained models on MWSC and UKBB are currently available at https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
+
 #### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
 
 ```
