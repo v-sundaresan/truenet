@@ -1,4 +1,4 @@
-#!/usr/bin/env fslpython
+#!/usr/bin/env python
 import argparse
 import sys
 import pkg_resources
@@ -161,6 +161,3 @@ if __name__ == "__main__":
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
-
-
-
