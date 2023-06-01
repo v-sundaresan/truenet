@@ -91,12 +91,12 @@ def load_and_crop_data(data_path, weighted=True):
     flair_path = data_path['flair_path']
     t1_path = data_path['t1_path']
     lab_path = data_path['gt_path']
-    
-    data_sub_org = nib.load(flair_path).get_data().astype(float)
-    data_t1_sub_org = nib.load(t1_path).get_data().astype(float)    
-    labels_sub = nib.load(lab_path).get_data().astype(float) 
+
+    data_sub_org = nib.load(flair_path).get_fdata()
+    data_t1_sub_org = nib.load(t1_path).get_fdata()
+    labels_sub = nib.load(lab_path).get_fdata()
     labels_sub[labels_sub>1.5] = 0
-         
+
     _,coords = truenet_data_preprocessing.tight_crop_data(data_sub_org)
     row_cent = coords[1]//2 + coords[0]
     rowstart = np.amax([row_cent-64,0])
@@ -125,8 +125,8 @@ def load_and_crop_data(data_path, weighted=True):
     if weighted:
         gmdist_path = data_path['gmdist_path']
         ventdist_path = data_path['ventdist_path']
-        GM_distance_sub = nib.load(gmdist_path).get_data().astype(float) 
-        ventdistmap_sub = nib.load(ventdist_path).get_data().astype(float)
+        GM_distance_sub = nib.load(gmdist_path).get_fdata()
+        ventdistmap_sub = nib.load(ventdist_path).get_fdata()
         GM_distance_sub1 = np.zeros([128,coords[3],coords[5]])
         ventdistmap_sub1 = np.zeros([128,coords[3],coords[5]])
         GM_distance_sub_piece = GM_distance_sub[rowstart:rowend,colstart:colend,stackstart:stackend]
@@ -309,10 +309,10 @@ def load_and_crop_test_data(data_path):
     '''
     flair_path = data_path['flair_path']
     t1_path = data_path['t1_path']
-    
-    data_sub_org = nib.load(flair_path).get_data().astype(float)
-    data_t1_sub_org = nib.load(t1_path).get_data().astype(float)  
-         
+
+    data_sub_org = nib.load(flair_path).get_fdata()
+    data_t1_sub_org = nib.load(t1_path).get_fdata()
+
     _,coords = truenet_data_preprocessing.tight_crop_data(data_sub_org)
     row_cent = coords[1]//2 + coords[0]
     rowstart = np.amax([row_cent-64,0])

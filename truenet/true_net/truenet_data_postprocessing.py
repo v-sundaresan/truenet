@@ -24,7 +24,7 @@ def resize_to_original_size(probs, testpathdicts, plane='axial'):
     st = 0    
     testpath = testpathdicts[0]
     flair_path = testpath['flair_path']
-    data = nib.load(flair_path).get_data().astype(float)
+    data = nib.load(flair_path).get_fdata()
     _,coords = truenet_data_preprocessing.tight_crop_data(data)
     if plane =='axial':
         probs_sub = probs[st:st+coords[5],:,:,:]
@@ -60,7 +60,7 @@ def get_final_3dvolumes(volume3d,testpathdicts):
     st = 0
     testpath = testpathdicts[0]
     flair_path = testpath['flair_path']
-    data = nib.load(flair_path).get_data().astype(float)
+    data = nib.load(flair_path).get_fdata()
     volume3d = 0 * data
     _,coords = truenet_data_preprocessing.tight_crop_data(data)
     row_cent = coords[1]//2 + coords[0]
