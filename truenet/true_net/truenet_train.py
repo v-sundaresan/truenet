@@ -28,7 +28,7 @@ def dice_coeff(inp, tar):
     target_vect = tar.contiguous().view(-1)
     intersection = (pred_vect * target_vect).sum()
     dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
-    return dice
+    return dice.cpu()
 
 def validate_truenet(val_dataloader, model, batch_size, device, criterion, weighted=True, verbose=False):
     '''
@@ -83,8 +83,8 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
                 dice_val = dice_coeff(mask_vector, target_vector)
                 
                 dice_values += dice_val
-    val_av_loss = (running_val_loss / val_batch_count)#.cpu().numpy()
-    val_dice = (dice_values / val_batch_count)#.detach().cpu().numpy()
+    val_av_loss = (running_val_loss / val_batch_count)
+    val_dice = (dice_values / val_batch_count)
     print('Validation set: Average loss: ',  val_av_loss, flush=True)
     print('Validation set: Average accuracy: ',  val_dice, flush=True)
     return val_av_loss, val_dice
