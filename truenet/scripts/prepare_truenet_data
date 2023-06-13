@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #   Copyright (C) 2021 University of Oxford
 #   SHCOPYRIGHT
 #set -e
@@ -51,7 +51,7 @@ $FSLDIR/bin/fslreorient2std ${t1file}.nii.gz ${TMPVISDIR}/T1.nii.gz
 
 # PREPROCESSING OF FLAIR IMAGE
 $FSLDIR/bin/bet ${TMPVISDIR}/FLAIR.nii.gz ${TMPVISDIR}/FLAIR_brain.nii.gz
-$FSLDIR/bin/fast -B --nopve ${TMPVISDIR}/FLAIR_brain.nii.gz 
+$FSLDIR/bin/fast -B --nopve ${TMPVISDIR}/FLAIR_brain.nii.gz
 ${FSLDIR}/bin/imcp ${TMPVISDIR}/FLAIR_brain_restore.nii.gz ${outdir}/${outname}_FLAIR.nii.gz
 
 # APPLYING FSL_ANAT ON THE REORIENTED T1 IMAGE
@@ -65,21 +65,7 @@ $FSLDIR/bin/make_bianca_mask ${TMPVISDIR}/T1.anat/T1_biascorr ${TMPVISDIR}/T1.an
 $FSLDIR/bin/flirt -dof 6 -in ${TMPVISDIR}/T1.anat/T1_biascorr_bianca_mask.nii.gz -ref ${TMPVISDIR}/FLAIR_brain.nii.gz -applyxfm -init ${TMPVISDIR}/${outname}_T1_2FLAIR.mat -out ${TMPVISDIR}/${outname}_WMmask.nii.gz
 $FSLDIR/bin/fslmaths ${TMPVISDIR}/${outname}_WMmask.nii.gz -thr 0.5 -bin ${outdir}/${outname}_WMmask.nii.gz
 
-# REMOVES TEMPORARY DIRECTORY 
+# REMOVES TEMPORARY DIRECTORY
 rm -r ${TMPVISDIR}
 
 exit 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
