@@ -111,6 +111,14 @@ Optional arguments:
 
 ### The pretrained models on MWSC and UKBB are currently available at https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
 
+#### When we integrate our tool into FSL, the models will be available in '$FSLDIR/data/truenet/Models' folder.
+#### But for testing purposes, you can download the models from the above drive link into a folder and set the folder as environment variable and then run truenet. 
+For doing this, once you download the models into a folder, please type the following in the command prompt: 
+```
+export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
+```
+and then run truenet commands.
+
 #### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
 
 ```
