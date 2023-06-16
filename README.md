@@ -1,15 +1,24 @@
 # Triplanar U-Net ensemble network (TrUE-Net) model 
 
+## Contents
+ - [citation](#citation)
+ - dependencies
+ - installation
+ - simple usage
+ - advanced usage
+ - technical details
+
 ## DL tool for white matter hyperintensities segmentation
 
-### Article currently available at: https://doi.org/10.1016/j.media.2021.102184
+### Citation
+Article currently available at: https://doi.org/10.1016/j.media.2021.102184
 
-#### Software versions used for truenet:
-- Python > 3.6
-- PyTorch=1.5.0
 
 #### Dependencies for prepare_truenet_data:
 - FMRIB software library (FSL) 6.0
+- Python dependencies:
+  - Python > 3.6
+  - PyTorch=1.5.0
 
 ## TrUE-Net architecture:
 <img
