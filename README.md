@@ -46,9 +46,14 @@ And for options and inputs for each sub-command, type:
 truenet <subcommand> --help (e.g. truenet train --help)
 ```
 ## Preprocessing and preparing data for truenet
-We used both T1-weighted and FLAIR images as inputs for the model. We reoriented the images to the standard MNI space, performed skull-stripping FSL BET and bias field correction using FSL FAST. We registered the T1-weighted image to the FLAIR using linear rigid-body registration.
+T1-weighted and/or FLAIR images, or similar, can be used as inputs for truenet. A series of preprocessing operations need to be applied to the images. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
 
-We obtained the white matter mask from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and make bianca mask command in FSL BIANCA (Griffanti et al., 2016).
+This script performs the following steps:
+ - reorienting image to the standard MNI space (using FSL FLIRT)
+ - skull-stripping (using FSL BET)
+ - bias field correction (using FSL FAST)
+ - T1-weighted images (or similar) need to be registered to the FLAIR (or whatever image was used to make the manual masks) using linear rigid-body registration (using FSL FLIRT).
+ - creating a white matter mask, obtained from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and the _make bianca mask_ command in FSL BIANCA (Griffanti et al., 2016).
 
 #### prepare_truenet_data
 ```
@@ -63,6 +68,15 @@ output_basename 	name to be used for the processed FLAIR and T1 images (along wi
 
 ## Simple usage
 
+There are multiple options in how truenet can be used, but a simple summary is this:
+ - to segment an image you use the _evaluate_ mode
+   - this requires an existing _model_ to be used, where a model is a network that has been trained on some dataset
+   - you can use a _pretrained_ model that is supplied with truenet (see [below](#pretrained-models))
+    - to use any of these pretrained models your images need to match relatively well to those used to train the model
+   - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
+   - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less data for training)
+
+### Examples
 
 ## Advanced usage
 
@@ -74,23 +88,26 @@ Triplanar ensemble U-Net model, v1.0.1
 
 ```  
 Subcommands available:
-    - truenet train         Training a TrUE-Net model from scratch
     - truenet evaluate      Applying a saved/pretrained TrUE-Net model for testing
     - truenet fine_tune     Fine-tuning a saved/pretrained TrUE-Net model from scratch
+    - truenet train         Training a TrUE-Net model from scratch
     - truenet loo_validate  Leave-one-out validation of TrUE-Net model
 ```
 
 ### Applying the TrUE-Net model (performing segmentation)
 
-### The pretrained models on MWSC and UKBB are currently available at https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
+#### Pretrained models
 
-#### When we integrate our tool into FSL, the models will be available in '$FSLDIR/data/truenet/Models' folder.
-#### But for testing purposes, you can download the models from the above drive link into a folder and set the folder as environment variable and then run truenet. 
-For doing this, once you download the models into a folder, please type the following in the command prompt: 
+ - Currently pretrained models, based on the [MWSC](linkhere) and UKBB [UK Biobank](linkhere) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
+
+ - These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/Models' folder.
+ 
+ - Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet. 
+To do this, once you download the models into a folder, please type the following in the command prompt: 
 ```
 export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
 ```
-and then run truenet commands.
+and then you can run truenet commands using the pretrained models as if they were integrated into FSL.
 
 #### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
 
