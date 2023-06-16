@@ -1,47 +1,43 @@
 # Triplanar U-Net ensemble network (TrUE-Net) model 
 
-## Contents
- - [citation](#citation)
- - dependencies
- - installation
- - simple usage
- - advanced usage
- - technical details
-
 ## DL tool for white matter hyperintensities segmentation
 
-### Citation
+## Contents
+ - [citation](#citation)
+ - [dependencies](#dependencies)
+ - [installation](#installation)
+ - [preprocessing](#preprocessing-and-preparing-data-for-truenet)
+ - [simple usage](#simple-usage)
+ - [advanced usage](#advanced-usage)
+ - [technical details](#technical-details)
+
+## Citation
 Article currently available at: https://doi.org/10.1016/j.media.2021.102184
 
+If you use the tool from this repository, please cite the following papers:
 
-#### Dependencies for prepare_truenet_data:
-- FMRIB software library (FSL) 6.0
-- Python dependencies:
+- Sundaresan, V., Zamboni, G., Rothwell, P.M., Jenkinson, M. and Griffanti, L., 2021. Triplanar ensemble U-Net model for white matter hyperintensities segmentation on MR images. Medical Image Analysis, p.102184. [DOI: https://doi.org/10.1016/j.media.2021.102184] (preprint available at https://doi.org/10.1101/2020.07.24.219485)
+- Sundaresan, V., Zamboni, G., Dinsdale, N. K., Rothwell, P. M., Griffanti, L., & Jenkinson, M. (2021). Comparison of domain adaptation techniques for white matter hyperintensity segmentation in brain MR images. bioRxiv. [DOI: https://doi.org/10.1101/2021.03.12.435171] (accepted in Medical Image Analysis, DOI to be updated soon).
+
+
+## Dependencies
+- Main truenet dependencies:
   - Python > 3.6
   - PyTorch=1.5.0
+- Extra dependencies for pre-processing:
+  - FMRIB software library (FSL) 6.0
 
-## TrUE-Net architecture:
-<img
-src="images/main_architecture_final.png"
-alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
-/>
 
-### Applying spatial weights in the loss function:
-We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
-<p align="center">
-       <img
-       src="images/spatial_weight_map.png"
-       alt="Spatial weight maps to be applied in the truenet loss function."
-       width=600
-       />
-</p>
-
-## To install the truenet tool
-Clone the git repository into your loacal directory and run:
+## Installation
+To install the truenet tool do the following:
+1. Clone the git repository into your local directory.  
+  - If you are not familiar with GitHub then the easiest way is to use the Clone button and select the zip file option for download, then move the zip file to where you want to have truenet installed and unzip it.
+3. Run:
 ``` 
 python setup.py install
 ```
-To find about the subcommands available in truenet:
+3. Use the instructions in this document ([simple usage](#simple-usage) is recommended for beginners)
+4. More detailed lists of options for the subcommands are available in the command-line help:
 ```
 truenet --help
 ```
@@ -65,7 +61,14 @@ output_basename 	name to be used for the processed FLAIR and T1 images (along wi
                      output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
 ```
 
-## Running truenet
+## Simple usage
+
+
+## Advanced usage
+
+### Modes of operation
+
+Details of the different commands and their options are available through the command-line help
 
 Triplanar ensemble U-Net model, v1.0.1
 
@@ -77,46 +80,7 @@ Subcommands available:
     - truenet loo_validate  Leave-one-out validation of TrUE-Net model
 ```
 
-### Training the TrUE-Net model
-
-#### truenet train: training the TrUE-Net model from scratch, v1.0.1
-
-```
-Usage: truenet train -i <input_directory> -l <label_directory> -m <model_directory> [options] 
-
-
-Compulsory arguments:
-       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training 
-       -l, --label_dir               Path to the directory containing manual labels for training 
-       -m, --model_dir               Path to the directory where the training model or weights need to be saved 
-   
-Optional arguments:
-       -tr_prop, --train_prop        Proportion of data used for training [0, 1]. The rest will be used for validation [default = 0.8]
-       -bfactor, --batch_factor      Number of subjects to be considered for each mini-epoch [default = 10]
-       -loss, --loss_function        Applying spatial weights to loss function. Options: weighted, nweighted [default=weighted]
-       -gdir, --gmdist_dir           Directory containing GM distance map images. Required if -loss=weighted [default = None]
-       -vdir, --ventdist_dir         Directory containing ventricle distance map images. Required if -loss=weighted [default = None]
-       -nclass, --num_classes        Number of classes to consider in the target labels (nclass=2 will consider only 0 and 1 in labels;
-                                     any additional class will be considered part of background class [default = 2]
-       -plane, --acq_plane           The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all [default = all]
-       -da, --data_augmentation      Applying data augmentation [default = True]
-       -af, --aug_factor             Data inflation factor for augmentation [default = 2]
-       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
-       -ilr, --init_learng_rate      Initial LR to use in scheduler [0, 0.1] [default=0.001]
-       -lrm, --lr_sch_mlstone        Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
-       -gamma, --lr_sch_gamma        Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
-       -opt, --optimizer             Optimizer used for training. Options:adam, sgd [default = adam]
-       -bs, --batch_size             Batch size used for training [default = 8]
-       -ep, --num_epochs             Number of epochs for training [default = 60]
-       -es, --early_stop_val         Number of epochs to wait for progress (early stopping) [default = 20]
-       -sv_mod, --save_full_model    Saving the whole model instead of weights alone [default = False]
-       -cv_type, --cp_save_type      Checkpoint to be saved. Options: best, last, everyN [default = last]
-       -cp_n, --cp_everyn_N          If -cv_type=everyN, the N value [default = 10]
-       -v, --verbose                 Display debug messages [default = False]
-       -h, --help.                   Print help message
-```
-
-### Testing the TrUE-Net model
+### Applying the TrUE-Net model (performing segmentation)
 
 ### The pretrained models on MWSC and UKBB are currently available at https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
 
@@ -149,7 +113,7 @@ Optional arguments:
        -h, --help.                           Print help message
 ```
 
-### Fine-tuning the TrUE-Net model
+### Fine-tuning an existing TrUE-Net model
 
 #### truenet fine_tune: training the TrUE-Net model from scratch, v1.0.1
 <p align="center">
@@ -200,6 +164,45 @@ Optional arguments:
        -h, --help.                           Print help message
 ```
 
+### Training the TrUE-Net model from scratch
+
+#### truenet train: training the TrUE-Net model from scratch, v1.0.1
+
+```
+Usage: truenet train -i <input_directory> -l <label_directory> -m <model_directory> [options] 
+
+
+Compulsory arguments:
+       -i, --inp_dir                 Path to the directory containing FLAIR and T1 images for training 
+       -l, --label_dir               Path to the directory containing manual labels for training 
+       -m, --model_dir               Path to the directory where the training model or weights need to be saved 
+   
+Optional arguments:
+       -tr_prop, --train_prop        Proportion of data used for training [0, 1]. The rest will be used for validation [default = 0.8]
+       -bfactor, --batch_factor      Number of subjects to be considered for each mini-epoch [default = 10]
+       -loss, --loss_function        Applying spatial weights to loss function. Options: weighted, nweighted [default=weighted]
+       -gdir, --gmdist_dir           Directory containing GM distance map images. Required if -loss=weighted [default = None]
+       -vdir, --ventdist_dir         Directory containing ventricle distance map images. Required if -loss=weighted [default = None]
+       -nclass, --num_classes        Number of classes to consider in the target labels (nclass=2 will consider only 0 and 1 in labels;
+                                     any additional class will be considered part of background class [default = 2]
+       -plane, --acq_plane           The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all [default = all]
+       -da, --data_augmentation      Applying data augmentation [default = True]
+       -af, --aug_factor             Data inflation factor for augmentation [default = 2]
+       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
+       -ilr, --init_learng_rate      Initial LR to use in scheduler [0, 0.1] [default=0.001]
+       -lrm, --lr_sch_mlstone        Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
+       -gamma, --lr_sch_gamma        Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
+       -opt, --optimizer             Optimizer used for training. Options:adam, sgd [default = adam]
+       -bs, --batch_size             Batch size used for training [default = 8]
+       -ep, --num_epochs             Number of epochs for training [default = 60]
+       -es, --early_stop_val         Number of epochs to wait for progress (early stopping) [default = 20]
+       -sv_mod, --save_full_model    Saving the whole model instead of weights alone [default = False]
+       -cv_type, --cp_save_type      Checkpoint to be saved. Options: best, last, everyN [default = last]
+       -cp_n, --cp_everyn_N          If -cv_type=everyN, the N value [default = 10]
+       -v, --verbose                 Display debug messages [default = False]
+       -h, --help.                   Print help message
+```
+
 ### Cross-validation of TrUE-Net model
 
 #### truenet cross_validate: cross-validation of the TrUE-Net model, v1.0.1  
@@ -238,10 +241,25 @@ Optional arguments:
        -h, --help.                           Print help message
 ```
 
-If you use the tool from this repository, please cite the following papers:
+## Technical Details
 
-- Sundaresan, V., Zamboni, G., Rothwell, P.M., Jenkinson, M. and Griffanti, L., 2021. Triplanar ensemble U-Net model for white matter hyperintensities segmentation on MR images. Medical Image Analysis, p.102184. [DOI: https://doi.org/10.1016/j.media.2021.102184] (preprint available at https://doi.org/10.1101/2020.07.24.219485)
-- Sundaresan, V., Zamboni, G., Dinsdale, N. K., Rothwell, P. M., Griffanti, L., & Jenkinson, M. (2021). Comparison of domain adaptation techniques for white matter hyperintensity segmentation in brain MR images. bioRxiv. [DOI: https://doi.org/10.1101/2021.03.12.435171] (accepted in Medical Image Analysis, DOI to be updated soon).
+### TrUE-Net architecture:
+<img
+src="images/main_architecture_final.png"
+alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
+/>
+
+### Applying spatial weights in the loss function:
+We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
+<p align="center">
+       <img
+       src="images/spatial_weight_map.png"
+       alt="Spatial weight maps to be applied in the truenet loss function."
+       width=600
+       />
+</p>
+
+
 
 
 
