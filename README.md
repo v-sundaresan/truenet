@@ -30,7 +30,7 @@ If you use TrUE-Net, please cite the following papers:
 ## Installation
 To install the truenet tool do the following:
 1. Clone the git repository into your local directory.  
-  - If you are not familiar with GitHub then the easiest way is to use the Clone button (top, right hand side) on the [main truenet page](master) and select the zip file option for download, then move the zip file to where you want to have truenet installed and unzip it.
+  - If you are not familiar with GitHub then the easiest way is to use the Clone button (top, right hand side) on the [main truenet page](/) and select the zip file option for download, then move the zip file to where you want to have truenet installed and unzip it.
 3. Run:
 ``` 
 python setup.py install
