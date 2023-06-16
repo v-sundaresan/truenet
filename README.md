@@ -12,7 +12,6 @@
  - [technical details](#technical-details)
 
 ## Citation
-Article currently available at: https://doi.org/10.1016/j.media.2021.102184
 
 If you use the tool from this repository, please cite the following papers:
 
