@@ -54,7 +54,7 @@ This script performs the following steps:
  - T1-weighted images (or similar) need to be registered to the FLAIR (or whatever image was used to make the manual masks) using linear rigid-body registration (using FSL FLIRT).
  - creating a white matter mask, obtained from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and the _make bianca mask_ command in FSL BIANCA (Griffanti et al., 2016).
 
-#### prepare_truenet_data
+### prepare_truenet_data
 ```
 Usage: prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
  
@@ -69,7 +69,7 @@ prepare_truenet_data ...
 
 ## Simple usage
 
-#### Modes 
+### Modes 
 
 There are multiple options in how truenet can be used, but a simple summary is this:
  - to segment an image you use the _evaluate_ mode
@@ -79,7 +79,7 @@ There are multiple options in how truenet can be used, but a simple summary is t
  - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
  - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
   
-#### Recommendations
+### Recommendations
 
 To begin with we recommend that you try one of the pretrained models that is supplied with truenet.  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.  
 
@@ -93,7 +93,7 @@ When performing a training from scratch, the situation is similar to that for fi
 
 
 
-#### Examples
+### Examples
 
 ## Advanced usage
 
