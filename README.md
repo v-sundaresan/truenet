@@ -45,7 +45,7 @@ And for options and inputs for each sub-command, type:
 truenet <subcommand> --help (e.g. truenet train --help)
 ```
 ## Preprocessing and preparing data for truenet
-T1-weighted and/or FLAIR images, or similar, can be used as inputs for truenet. A series of preprocessing operations needs to be applied to any image that you want to use truenet on. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
+T1-weighted and/or FLAIR images, or similar (e.g. T2-weighted images), can be used as inputs for truenet. A series of preprocessing operations needs to be applied to any image that you want to use truenet on. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
 
 This script performs the following steps:
  - reorienting image to the standard MNI space (using FSL FLIRT)
@@ -59,10 +59,11 @@ This script performs the following steps:
 Usage: prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
  
 The script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
-FLAIR_image_name  	name of the input unprocessed FLAIR image
-T1_image_name 	name of the input unprocessed T1 image
-output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); 
-                     output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
+FLAIR_image_name: name of the input unprocessed FLAIR image
+T1_image_name: name of the input unprocessed T1 image
+output_basename: name to be used for the processed FLAIR and T1 images (along with the absolute path); 
+
+output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
 ```
 **Example:**
 prepare_truenet_data ...
@@ -94,7 +95,9 @@ When performing a training from scratch, the situation is similar to that for fi
 ### Naming conventions
 
 When running truenet it is necessary to use certain specific names and locations for files:
- - 
+ - for segmentation (_evaluate_ mode) the images inside the input directory need to be named like the outputs from _prepare_truenet_data_ :
+   - that is: the FLAIR and T1 volumes should be named as '<basename>_FLAIR.nii.gz' and '<basename>_T1.nii.gz'respectively
+ - for training or fine-tuning, labelled images (i.e. manual segmentations) need to be named _<subject>_manualmask.nii.gz_ (where the _<subject>_ part needs to be replaced with your subject identifier, e.g. sub-001)
  - each output directory that is specified must already exist; if not, use _mkdir_ to create it prior to running truenet
 
 ### Examples
