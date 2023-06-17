@@ -73,11 +73,11 @@ prepare_truenet_data ...
 
 There are multiple options in how truenet can be used, but a simple summary is this:
  - to segment an image you use the _evaluate_ mode
-   - this requires an existing _model_ to be used, where a model is a deep learning network (which is what is inside truenet) that has been trained on some dataset
-   - you can use a _pretrained_ model that is supplied with truenet (see [below](#pretrained-models))
-    - to use any of these pretrained models, your images need to match relatively well to those used to train the model
-   - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
-   - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
+ - this requires an existing _model_ to be used, where a model is a deep learning network (which is what is inside truenet) that has been trained on some dataset
+ - you can use a _pretrained_ model that is supplied with truenet (see [below](#pretrained-models))
+   - to use any of these pretrained models, your images need to match relatively well to those used to train the model
+ - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
+ - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
   
 #### Recommendations
 
