@@ -36,7 +36,7 @@ To install the truenet tool do the following:
 python setup.py install
 ```
 3. Use the instructions in this document ([simple usage](#simple-usage) is recommended for beginners)
-4. More detailed lists of options for the subcommands are available in the command-line help:
+4. For more advanced usage, detailed lists of options for the subcommands are available in the command-line help:
 ```
 truenet --help
 ```
@@ -64,18 +64,36 @@ T1_image_name 	name of the input unprocessed T1 image
 output_basename 	name to be used for the processed FLAIR and T1 images (along with the absolute path); 
                      output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
 ```
+**Example:**
+prepare_truenet_data ...
 
 ## Simple usage
 
+#### Options 
+
 There are multiple options in how truenet can be used, but a simple summary is this:
  - to segment an image you use the _evaluate_ mode
-   - this requires an existing _model_ to be used, where a model is a network that has been trained on some dataset
+   - this requires an existing _model_ to be used, where a model is a deep learning network (which is what is inside truenet) that has been trained on some dataset
    - you can use a _pretrained_ model that is supplied with truenet (see [below](#pretrained-models))
-    - to use any of these pretrained models your images need to match relatively well to those used to train the model
+    - to use any of these pretrained models, your images need to match relatively well to those used to train the model
    - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
-   - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less data for training)
+   - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
+  
+#### Recommendations
 
-### Examples
+To begin with we recommend that you try one of the pretrained models that is supplied with truenet.  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.  
+
+Note that one reason that things might not work well is if the preprocessing fails, so make sure you check the preprocessing results before running trunet (looking at the images in _fsleyes_ is normally the best way to check if the registrations, brain extractions and bias field corrections are good or not).
+
+The simplest way to choose which pretrained model to choose is just by looking at example images from those datasets (see HERE?!?!?) and deciding which ones look closer to yours or not.  One of the reasons that different models are needed is that images vary between different MRI sequences and scanners.  Sometimes the differences are obvious to the eye and sometimes not, and deep learning networks can sometimes be sensitive to subtle differences.  If you are not sure which is closest then pick one and try it, and then try the other one if you are not happy.
+
+When performing a fine tuning operation it is necessary to supply your own labelled images (i.e. images and manual segmentations) and for this to work we recommend that you have at least NNNN images (though you can try with less and see if you are lucky). Typically, the more you have the better your chances of it adapting well to the characteristics of your images and/or the specifics of your segmentation protocol/preferences. Normally we would recommend trying fine tuning before training from scratch (and the latter isn't needed if your fine tuning results are good) but the one exception to this is when your images are obviously very different to those in the pretrained datasets, as in this case you are unlikely to get a good result from fine tuning.
+
+When performing a training from scratch, the situation is similar to that for fine tuning - you need a set of your own labelled images, but you need more in this case and we would recommend a minimum of NNNN images (though again, you can try your luck with less). 
+
+
+
+#### Examples
 
 ## Advanced usage
 
@@ -97,7 +115,7 @@ Subcommands available:
 
 #### Pretrained models
 
- - Currently pretrained models, based on the [MWSC](linkhere) and UKBB [UK Biobank](linkhere) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
+ - Currently pretrained models, based on the [MWSC](linkhere) (MICCAI WMH Segmentation Challenge) and [UKBB](linkhere) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
 
  - These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/Models' folder.
  
