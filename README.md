@@ -124,7 +124,7 @@ To do this, once you download the models into a folder, please type the followin
 ```
 export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
 ```
-and then you can run truenet commands using the pretrained models as if they were integrated into FSL.
+and then you can run truenet commands using the pretrained models as if they were integrated into FSL. The export command needs to be done once for each terminal that you open, prior to running truenet.
 
 #### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
 
