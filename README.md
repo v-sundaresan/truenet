@@ -91,7 +91,11 @@ When performing a fine tuning operation it is necessary to supply your own label
 
 When performing a training from scratch, the situation is similar to that for fine tuning - you need a set of your own labelled images, but you need more in this case and we would recommend a minimum of NNNN images (though again, you can try your luck with less). 
 
+### Naming conventions
 
+When running truenet it is necessary to use certain specific names and locations for files:
+ - 
+ - each output directory that is specified must already exist; if not, use _mkdir_ to create it prior to running truenet
 
 ### Examples
 
