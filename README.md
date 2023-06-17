@@ -45,7 +45,7 @@ And for options and inputs for each sub-command, type:
 truenet <subcommand> --help (e.g. truenet train --help)
 ```
 ## Preprocessing and preparing data for truenet
-T1-weighted and/or FLAIR images, or similar, can be used as inputs for truenet. A series of preprocessing operations needs to be applied to the images. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
+T1-weighted and/or FLAIR images, or similar, can be used as inputs for truenet. A series of preprocessing operations needs to be applied to any image that you want to use truenet on. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
 
 This script performs the following steps:
  - reorienting image to the standard MNI space (using FSL FLIRT)
