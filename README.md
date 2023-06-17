@@ -81,7 +81,7 @@ There are multiple options in how truenet can be used, but a simple summary is t
   
 ### Recommendations
 
-To begin with we recommend that you try one of the pretrained models that is supplied with truenet.  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.  
+To begin with we recommend that you try one of the pretrained models that is supplied with truenet (see [below](#pretrained-models)).  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.  
 
 Note that one reason that things might not work well is if the preprocessing fails, so make sure you check the preprocessing results before running trunet (looking at the images in _fsleyes_ is normally the best way to check if the registrations, brain extractions and bias field corrections are good or not).
 
