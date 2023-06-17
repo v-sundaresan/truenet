@@ -69,7 +69,7 @@ prepare_truenet_data ...
 
 ## Simple usage
 
-#### Options 
+#### Modes 
 
 There are multiple options in how truenet can be used, but a simple summary is this:
  - to segment an image you use the _evaluate_ mode
