@@ -95,10 +95,13 @@ When performing a training from scratch, the situation is similar to that for fi
 ### Naming conventions
 
 When running truenet it is necessary to use certain specific names and locations for files:
- - for segmentation (_evaluate_ mode) the images inside the input directory need to be named like the outputs from _prepare_truenet_data_ :
-   - that is: the FLAIR and T1 volumes should be named as '<basename>_FLAIR.nii.gz' and '<basename>_T1.nii.gz'respectively
- - for training or fine-tuning, labelled images (i.e. manual segmentations) need to be named _<subject>_manualmask.nii.gz_ (where the _<subject>_ part needs to be replaced with your subject identifier, e.g. sub-001)
+ - for segmentation (_evaluate_ mode) the images inside the specified input directory need to be named like the outputs from _prepare_truenet_data_ :
+   - that is: the FLAIR and/or T1 volumes should be named as *basename*_FLAIR.nii.gz and/or *basename*_T1.nii.gz respectively
  - each output directory that is specified must already exist; if not, use _mkdir_ to create it prior to running truenet
+ - for training or fine-tuning, all images need to be in one directory and named:
+   - preprocessed images: *subject*_FLAIR.nii.gz and/or *subject*_T1.nii.gz
+   - labelled images: (i.e. manual segmentations) need to be named *subject*_manualmask.nii.gz
+   - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
 
 ### Examples
 
