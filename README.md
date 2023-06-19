@@ -108,10 +108,16 @@ When running truenet it is necessary to use certain specific names and locations
 
  - Run a segmentation on preprocessed data (from subject 1 in dataset A):
 
+`mkdir DatasetA/results-001`
+
 `truenet evaluate -i DatasetA/sub-001 -m /home/myname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results-001`
 
- - Fine-tune an existing model using images and labels from XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+ - Fine-tune an existing model using images and labels from XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
+`mkdir DatasetA/model_finetuned`
+
+`truenet fine_tune -i DatasetA/Training-set -m /home/mark/Research/Truenet/Set1/model/Truenet_model_weights_beforeES -l DatasetA/Training-set -o DatasetA/model_finetuned -loss nweighted`
+????????????????????????????????
 
 ## Advanced usage
 
