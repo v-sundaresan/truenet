@@ -66,7 +66,8 @@ output_basename: name to be used for the processed FLAIR and T1 images (along wi
 output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
 ```
 **Example:**
-prepare_truenet_data ...
+
+`prepare_truenet_data FLAIR.nii.gz T1.nii.gz subject001`
 
 ## Simple usage
 
@@ -104,6 +105,13 @@ When running truenet it is necessary to use certain specific names and locations
    - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
 
 ### Examples
+
+ - Run a segmentation on preprocessed data (from subject 1 in dataset A):
+
+`truenet evaluate -i DatasetA/sub-001 -m /home/myname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results-001`
+
+ - Fine-tune an existing model using images and labels from XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXx
+
 
 ## Advanced usage
 
