@@ -106,17 +106,17 @@ When running truenet it is necessary to use certain specific names and locations
 
 ### Examples
 
- - Run a segmentation on preprocessed data (from subject 1 in dataset A):
+ - Run a segmentation on preprocessed data (from subject 1 in dataset A). 
 
-`mkdir DatasetA/results-001`
+`mkdir DatasetA/results001`
 
-`truenet evaluate -i DatasetA/sub-001 -m /home/myname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results-001`
+`truenet evaluate -i DatasetA/sub001 -m /home/myname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results001`
 
- - Fine-tune an existing model using images and labels from XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+ - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc):
 
 `mkdir DatasetA/model_finetuned`
 
-`truenet fine_tune -i DatasetA/Training-pt -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned2 -l DatasetA/Training-pt -loss nweighted`
+`truenet fine_tune -i DatasetA/Training-pt -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-pt -loss nweighted`
 
 
 ## Advanced usage
