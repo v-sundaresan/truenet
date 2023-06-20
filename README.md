@@ -11,6 +11,9 @@
  - [advanced usage](#advanced-usage)
  - [technical details](#technical-details)
 
+---
+---
+
 ## Citation
 
 If you use TrUE-Net, please cite the following papers:
@@ -18,6 +21,8 @@ If you use TrUE-Net, please cite the following papers:
 - Sundaresan, V., Zamboni, G., Rothwell, P.M., Jenkinson, M. and Griffanti, L., 2021. Triplanar ensemble U-Net model for white matter hyperintensities segmentation on MR images. Medical Image Analysis, p.102184. [DOI: https://doi.org/10.1016/j.media.2021.102184] (preprint available at https://doi.org/10.1101/2020.07.24.219485)
 - Sundaresan, V., Zamboni, G., Dinsdale, N. K., Rothwell, P. M., Griffanti, L., & Jenkinson, M. (2021). Comparison of domain adaptation techniques for white matter hyperintensity segmentation in brain MR images. bioRxiv. [DOI: https://doi.org/10.1101/2021.03.12.435171] (accepted in Medical Image Analysis, DOI to be updated soon).
 
+---
+---
 
 ## Dependencies
 - Main truenet dependencies:
@@ -26,6 +31,8 @@ If you use TrUE-Net, please cite the following papers:
 - Extra dependencies for pre-processing:
   - FMRIB software library (FSL) 6.0
 
+---
+---
 
 ## Installation
 To install the truenet tool do the following:
@@ -44,6 +51,10 @@ And for options and inputs for each sub-command, type:
 ```
 truenet <subcommand> --help (e.g. truenet train --help)
 ```
+
+---
+---
+
 ## Preprocessing and preparing data for truenet
 T1-weighted and/or FLAIR images, or similar (e.g. T2-weighted images), can be used as inputs for truenet. A series of preprocessing operations needs to be applied to any image that you want to use truenet on. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_ 
 
@@ -68,6 +79,9 @@ output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and ou
 **Example:**
 
 `prepare_truenet_data FLAIR.nii.gz T1.nii.gz sub001`
+
+---
+---
 
 ## Simple usage
 
@@ -110,16 +124,30 @@ When running truenet it is necessary to use certain specific names and locations
 
 `mkdir DatasetA/results001`
 
-`truenet evaluate -i DatasetA/sub001 -m /home/myname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results001`
+`truenet evaluate -i DatasetA/sub001 -m /home/yourname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results001`
 
- - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc):
+---
+
+ - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
 
 `mkdir DatasetA/model_finetuned`
 
-`truenet fine_tune -i DatasetA/Training-pt -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-pt -loss nweighted`
+`truenet fine_tune -i DatasetA/Training-partial -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss nweighted`
 
- - Training a model from scratch
+    - then apply this model to a new subject:
 
+`truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
+
+---
+
+ - Training a model from scratch using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+
+`mkdir DatasetA/model`
+
+`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss nweighted`
+
+---
+---
 
 ## Advanced usage
 
