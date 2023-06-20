@@ -67,7 +67,7 @@ output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and ou
 ```
 **Example:**
 
-`prepare_truenet_data FLAIR.nii.gz T1.nii.gz subject001`
+`prepare_truenet_data FLAIR.nii.gz T1.nii.gz sub001`
 
 ## Simple usage
 
@@ -106,7 +106,7 @@ When running truenet it is necessary to use certain specific names and locations
 
 ### Examples
 
- - Run a segmentation on preprocessed data (from subject 1 in dataset A). 
+ - Run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`). 
 
 `mkdir DatasetA/results001`
 
@@ -117,6 +117,8 @@ When running truenet it is necessary to use certain specific names and locations
 `mkdir DatasetA/model_finetuned`
 
 `truenet fine_tune -i DatasetA/Training-pt -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-pt -loss nweighted`
+
+ - Training a model from scratch
 
 
 ## Advanced usage
