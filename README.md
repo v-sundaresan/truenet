@@ -116,8 +116,8 @@ When running truenet it is necessary to use certain specific names and locations
 
 `mkdir DatasetA/model_finetuned`
 
-`truenet fine_tune -i DatasetA/Training-set -m /home/mark/Research/Truenet/Set1/model/Truenet_model_weights_beforeES -l DatasetA/Training-set -o DatasetA/model_finetuned -loss nweighted`
-????????????????????????????????
+`truenet fine_tune -i DatasetA/Training-pt -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned2 -l DatasetA/Training-pt -loss nweighted`
+
 
 ## Advanced usage
 
