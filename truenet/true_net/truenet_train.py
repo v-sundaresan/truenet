@@ -253,7 +253,7 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
 
         if save_checkpoint:
             np.savez(os.path.join(dir_checkpoint,'losses_' + mode + '.npz'), train_loss=losses_train, val_loss=losses_val)
-            np.savez(os.path.join(dir_checkpoint,'validation_dice_' + mode + '.npz'), dice_val=dice_val)
+            np.savez(os.path.join(dir_checkpoint,'validation_dice_' + mode + '.npz'), dice_val=dice_val[0].detach().cpu().numpy())
         
         early_stopping(val_av_loss, val_av_dice, best_val_dice, model, epoch, optimizer, scheduler, av_loss, 
                        train_params, weights=save_weights, checkpoint=save_checkpoint, save_condition=save_case, 
