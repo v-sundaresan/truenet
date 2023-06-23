@@ -61,7 +61,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
 
             if list(X.size())[0] == batch_size:
                 val_pred = model.forward(X)
-                
+
                 if verbose:
                     print('Validation mask dimensions........')
                     print(val_pred.size())
@@ -72,7 +72,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
                     loss = criterion(val_pred, y, weight=pix_weights)
                 else:
                     loss = criterion(val_pred, y, weight=None)
-                 
+
                 running_val_loss += loss.item()
                 softmax = nn.Softmax()
                 probs = softmax(val_pred)
@@ -81,7 +81,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
 
                 target_vector = y.contiguous().view(-1)
                 dice_val = dice_coeff(mask_vector, target_vector)
-                
+
                 dice_values += dice_val
     val_av_loss = (running_val_loss / val_batch_count)
     val_dice = (dice_values / val_batch_count)
@@ -89,7 +89,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
     print('Validation set: Average accuracy: ',  val_dice, flush=True)
     return val_av_loss, val_dice
 
-def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer, scheduler, train_params, device, 
+def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer, scheduler, train_params, device,
                   mode='axial', augment=True, weighted=True, save_checkpoint=True, save_weights=True, save_case='best',
                   verbose=True, dir_checkpoint=None):
     '''
@@ -112,22 +112,22 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
     :param dir_checkpoint: str, filepath for saving the model
     :return: trained model
     '''
-    
+
     batch_size = train_params['Batch_size']
-    num_epochs = train_params['Num_epochs']   
-    batch_factor = train_params['Batch_factor'] 
+    num_epochs = train_params['Num_epochs']
+    batch_factor = train_params['Batch_factor']
     patience = train_params['Patience']
     aug_factor = train_params['Aug_factor']
     save_resume = train_params['SaveResume']
-    
+
     early_stopping = truenet_utils.EarlyStoppingModelCheckpointing(patience, verbose=verbose)
-        
+
     num_iters = max(len(train_name_dicts)//batch_factor,1)
     losses_train = []
     losses_val = []
     dice_val = []
     best_val_dice = 0
-    
+
     val_data_dict = truenet_data_preparation.create_data_array(val_names_dicts, is_weighted=weighted, plane=mode)
     valdata = truenet_data_preparation.get_slices_from_data_with_aug(val_data_dict, plane=mode, test=1,
                                                                      weighted=weighted)
@@ -156,7 +156,7 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
     for epoch in range(start_epoch, num_epochs+1):
         model.train()
         running_loss = 0.0
-        batch_count = 0   
+        batch_count = 0
         print('Epoch: ' + str(epoch) + ' starting!..............................')
         for i in range(num_iters):
             trainnames = train_name_dicts[i*batch_factor:(i+1)*batch_factor]
@@ -169,7 +169,7 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
             else:
                 traindata = truenet_data_preparation.get_slices_from_data_with_aug(train_data_dict, plane=mode,
                                                                                    test=1, weighted=weighted)
-            
+
             data = traindata[0].transpose(0,3,1,2)
             label = traindata[1]
             data_val = valdata[0].transpose(0,3,1,2)
@@ -197,8 +197,8 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
                     print(y.shape)
                 X = X.to(device=device, dtype=torch.float32)
                 y = y.to(device=device, dtype=torch.double)
-                
-                if list(X.size())[0] == batch_size :  
+
+                if list(X.size())[0] == batch_size :
                     optimizer.zero_grad()
                     masks_pred = model.forward(X)
 
@@ -224,14 +224,14 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
                                 100. * (batch_idx+1) / len(train_dataloader), loss.item()), flush=True)
 
                     batch_count += 1
-                
+
         val_av_loss, val_av_dice = validate_truenet(val_dataloader, model, batch_size, device, criterion,
                                                     weighted=weighted, verbose=verbose)
         scheduler.step(val_av_dice)
-                    
+
         av_loss = (running_loss / batch_count)#.detach().cpu().numpy()
         print('Training set: Average loss: ',  av_loss, flush=True)
-        losses_train.append(av_loss)        
+        losses_train.append(av_loss)
         losses_val.append(val_av_loss)
         dice_val.append(val_av_dice)
 
@@ -253,16 +253,16 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
 
         if save_checkpoint:
             np.savez(os.path.join(dir_checkpoint,'losses_' + mode + '.npz'), train_loss=losses_train, val_loss=losses_val)
-            np.savez(os.path.join(dir_checkpoint,'validation_dice_' + mode + '.npz'), dice_val=dice_val[0].detach().cpu().numpy())
-        
-        early_stopping(val_av_loss, val_av_dice, best_val_dice, model, epoch, optimizer, scheduler, av_loss, 
-                       train_params, weights=save_weights, checkpoint=save_checkpoint, save_condition=save_case, 
+            np.savez(os.path.join(dir_checkpoint,'validation_dice_' + mode + '.npz'), dice_val=dice_val)
+
+        early_stopping(val_av_loss, val_av_dice, best_val_dice, model, epoch, optimizer, scheduler, av_loss,
+                       train_params, weights=save_weights, checkpoint=save_checkpoint, save_condition=save_case,
                        model_path=dir_checkpoint, plane=mode)
-        
+
         if val_av_dice > best_val_dice:
             best_val_dice = val_av_dice
 
-        if early_stopping.early_stop: 
+        if early_stopping.early_stop:
             print('Patience Reached - Early Stopping Activated', flush=True)
             if save_resume:
                 if dir_checkpoint is not None:
@@ -283,12 +283,3 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
         os.remove(ckpt_path)
 
     return model
-        
-
-
-
-
-
-
-
-
