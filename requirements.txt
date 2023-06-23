@@ -1,6 +1,5 @@
-nibabel>=2.*
+nibabel
 scipy
 torch
 numpy
 scikit-image
-
