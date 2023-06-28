@@ -1,0 +1,198 @@
+#!/bin/bash
+#   Copyright (C) 2016 University of Oxford
+#   SHCOPYRIGHT
+set -e
+#set -x
+
+################################################################################################################
+
+if [ $# -lt 1 ] ; then
+  echo "Usage:  `basename $0` <flair_image> <flair_CSF_pve> <matfile_MNI2flair> <keep_intermediate_files>"
+  echo " "
+  echo "The first input is the basename of the flair image."
+  echo "The second input is the corresponding CSF partial volume map calculated with FAST"
+  echo "The third input is the linear affine transformation matfile from standard space to structural image"
+  echo "If you want to keep intermediate files (e.g. for debugging), add 1 as 4th input"
+  echo " "
+  echo "e.g.`basename $0` FLAIR_brain.nii.gz FLAIR_fast_pve_0.nii.gz MNI_2FLAIR.mat"
+  echo " "
+  echo "Output: the script creates two files called <flair_basename>_bianca_mask.nii.gz , <flair_basename>_ventmask.nii.gz"
+  echo "The first masks can be used to remove candidate lesions in GM from the automatic segmentation via fslmaths:"
+  echo "  e.g.   fslmaths sub001_bianca_output –mas FLAIR_bianca_mask.nii.gz sub001_bianca_output_masked"
+  echo "alternatively, it can be used to mask one of the input images to restrict the search for lesions within a tighter brain mask"
+  echo " e.g. fslmaths FLAIR –mas FLAIR_bianca_mask FLAIR_masked"
+  echo "The second mask can be used to calculate ventricle volumes or to extract periventricular lesions (as those whithin a certain distance from the ventricles)"
+  exit 0
+fi
+################################################################################################################
+
+# basename of the structural image. Under the assumption that the brain extracted image would be ${strucimg}_brain.nii.gz
+strucimgfile=$1
+strucimg=`basename ${strucimgfile} .nii.gz`
+strucimgdir=`dirname ${strucimgfile} `
+pushd $strucimgdir > /dev/null
+strucimgdir=`pwd`
+popd > /dev/null
+
+# basename of the CSF pve image. 
+pve0file=$2
+pve0=`basename ${pve0file} .nii.gz`
+pve0dir=`dirname ${pve0file} `
+pushd $pve0dir > /dev/null
+pve0dir=`pwd`
+popd > /dev/null
+
+# name of the nonlinear registration warp from MNI to structural image
+std2strucfile=$3
+std2stdir=`dirname $std2strucfile`
+pushd $std2stdir > /dev/null
+std2stdir=`pwd`
+popd > /dev/null
+std2stname=`basename ${std2strucfile} .mat`
+std2struc=${std2stdir}/${std2stname}
+
+if [ $# -gt 3 ] ; then
+intermediateON=$4
+else
+intermediateON=0
+fi
+
+# cd into the directory containing the structural image. It will create all the files at this level. At the end it will go back to the folder where the command was called from.
+origdir=`pwd`
+cd  ${strucimgdir}
+
+# creates temporary directory that will be deleted at the end.
+logID=`echo $(date | awk '{print $1 $2 $3}' |  sed 's/://g')`
+tmpdir=`mktemp -d ./makemask_${logID}_XXXXXX`
+
+# EXCLUSION MASK: brain mask without cerebellum, basal ganglia, brainstem, hippocampus, amygdala and enthorinal cortex:
+GMWMmask=${FSLDIR}/data/standard/bianca/bianca_exclusion_mask.nii.gz
+
+# VENTRICLES MASK: copies or creates dilated ventricle mask from MNI Harvard-Oxford atlas
+${FSLDIR}/bin/imcp ${FSLDIR}/data/standard/bianca/HarvardOxford-1mm-latvent-dilated.nii.gz $tmpdir/HOlatvent
+
+# Generate brain mask if not present
+if [ ! -e ${strucimg}_brainmask.nii.gz ] ; then
+    echo generating ${strucimg}_brainmask.nii.gz
+    $FSLDIR/bin/fslmaths ${strucimgfile} -bin ${strucimg}_brainmask.nii.gz
+else
+    echo using  ${strucimg}_brainmask.nii.gz as brain mask
+fi
+
+$FSLDIR/bin/flirt -dof 6 -in $tmpdir/HOlatvent.nii.gz -ref ${strucimg}_brain.nii.gz -applyxfm -init ${std2strucfile} -out $tmpdir/HOlatvent2${strucimg}.nii.gz
+$FSLDIR/bin/flirt -dof 6 -in $GMWMmask -ref ${strucimg}_brain.nii.gz -applyxfm -init ${std2strucfile} -out $tmpdir/subcortexcl2${strucimg}.nii.gz
+$FSLDIR/bin/fslmaths $tmpdir/subcortexcl2${strucimg}.nii.gz -thr 0.5 -bin -mas ${strucimg}_brainmask $tmpdir/${strucimg}_subcortexcl
+$FSLDIR/bin/fslmaths $tmpdir/HOlatvent2${strucimg}.nii.gz -thr 0.5 -bin -mas ${strucimg}_brainmask $tmpdir/${strucimg}_HOlatventbin
+
+#  Eliminate bright voxels (the second mode for the widest distribution)
+$FSLDIR/bin/fslmaths ${pve0dir}/${pve0} -thr 0.9 -bin -binv -mul ${strucimgfile} $tmpdir/${strucimg}_nonCSF
+medval=`$FSLDIR/bin/fslstats $tmpdir/${strucimg}_nonCSF -P 50`
+$FSLDIR/bin/fslmaths ${strucimgfile} -uthr $medval -bin -mul ${pve0dir}/${pve0} $tmpdir/${strucimg}_brain_pve_0
+
+# Overlapping csf_pve thresholded at 0.9 with ventricle mask from standard space and keeping all the clusters that overlap with the standard ventricles and have a size greater than 10 voxels
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_brain_pve_0 -thr 0.9 -mas $tmpdir/${strucimg}_HOlatventbin $tmpdir/ventmask_temp1
+$FSLDIR/share/fsl/bin/cluster --in=$tmpdir/ventmask_temp1.nii.gz --thresh=0.001 --osize=$tmpdir/ventmask_temp1_sidx.nii.gz --no_table
+$FSLDIR/bin/fslmaths $tmpdir/ventmask_temp1_sidx.nii.gz -thr 10 -bin $tmpdir/ventmask_temp
+
+# Improved ventricles segmentation
+# As normally the posterior portions of the ventricles are those that are not identified after nonlinear registration as they're the most distorted,
+# starts close to (3 slices before) the most posterior CORONAL slice where ventricles where identified and move towards the occipital lobe, adding,
+# slice by slice, the 2 biggest clusters (bigger than 5 voxels) of the thresholded (0.9) csf pve (pve0) that overlap with the ventricles identified in the previous slice.
+echo creating ventricles mask
+nlast_AP=`fslstats $tmpdir/ventmask_temp -w | awk '{ print $3 }' `
+nlastAP=`echo $nlast_AP + 3 | bc`
+$FSLDIR/bin/fslroi $tmpdir/ventmask_temp $tmpdir/ventmask_lastCORslice 0 -1 ${nlastAP} 1 0 -1
+VENTlastcorslice=$tmpdir/ventmask_lastCORslice
+# cut the vent mask until that slice (one slice earlier). From that one on, I’ll add the coronal slices with additional portions of ventricles
+totdim_AP=`fslval $tmpdir/ventmask_temp dim2`
+startslice=`echo $nlast_AP + 4 | bc`
+size_ventmaskOK=`echo $totdim_AP - $startslice | bc`
+$FSLDIR/bin/fslroi $tmpdir/ventmask_temp $tmpdir/ventmask_anterior 0 -1 $startslice $size_ventmaskOK 0 -1
+#from startslice towards 0 (posterior) I want to look for the ventricles in the pve0 image thresholded at 0.9
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_brain_pve_0.nii.gz -thr 0.9  $tmpdir/${strucimg}_brain_pve_0_thr09
+# step down until the first (zero) slice
+idslice1=$nlastAP
+stop=0
+while [ X`echo "if ( 0 <= $idslice1 ) { 1 }" | bc -l` = X1 ] && [ $stop = 0 ] ; do 
+    $FSLDIR/bin/fslroi $tmpdir/${strucimg}_brain_pve_0_thr09  $tmpdir/${strucimg}_pve09_lastCORslice 0 -1 $idslice1 1 0 -1    
+    $FSLDIR/share/fsl/bin/cluster -i $tmpdir/${strucimg}_pve09_lastCORslice -t 0.05 -o $tmpdir/${strucimg}_pve09_lastCORslice_idx --connectivity=6 --no_table
+    $FSLDIR/bin/fslcpgeom $tmpdir/${strucimg}_pve09_lastCORslice $VENTlastcorslice
+    $FSLDIR/bin/fslmaths $tmpdir/${strucimg}_pve09_lastCORslice_idx -mas $VENTlastcorslice $tmpdir/${strucimg}_pve09_lastCORslice_idx_masked
+    idx1=`$FSLDIR/bin/fslstats $tmpdir/${strucimg}_pve09_lastCORslice_idx_masked -P 100 | bc`
+    # if the slice is empty, there are no more ventricles to add, so it will fill the rest of the image with zero slices
+    if [ $idx1 = 0 ] ; then
+	pad=`echo $idslice1 +1 | bc`
+	# no more ventricles - padding with zeros
+	$FSLDIR/bin/fslroi $tmpdir/ventmask_temp $tmpdir/ventmask_posterior 0 -1 0 $pad 0 -1
+	$FSLDIR/bin/fslmerge -y $tmpdir/ventmask_anterior $tmpdir/ventmask_posterior $tmpdir/ventmask_anterior
+	stop=1
+    else
+    # get indices and sizes of two biggest clusters with some overlap
+    touch $tmpdir/sortlist.txt
+    rm $tmpdir/sortlist.txt
+    touch $tmpdir/sortlist.txt
+    idx0=`echo $idx1 + 1 | bc`
+    # step down through the non-zero indices
+    while [ X`echo "if ( 0 < $idx1 ) { 1 }" | bc -l` = X1 ] ; do
+	idx2=`$FSLDIR/bin/fslstats $tmpdir/${strucimg}_pve09_lastCORslice_idx_masked -u $idx1 -P 100`
+	n=`$FSLDIR/bin/fslstats $tmpdir/${strucimg}_pve09_lastCORslice_idx_masked -l $idx2 -u $idx0 -V | awk '{ print $1 }'`
+	if [ $n -ge 5 ] ; then
+	    echo "$n $idx1" >> $tmpdir/sortlist.txt
+	fi
+	idx0=$idx1
+	idx1=$idx2
+    done
+    # take top two results
+    idxlist=`sort -n $tmpdir/sortlist.txt | tail -2 | awk '{ print $2 }' | sort -u`
+    $FSLDIR/bin/fslmaths $tmpdir/${strucimg}_pve09_lastCORslice_idx -mul 0 $tmpdir/SEL
+    for idx in $idxlist ; do
+	$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_pve09_lastCORslice_idx -thr $idx -uthr $idx -bin -add $tmpdir/SEL $tmpdir/SEL
+    done
+    $FSLDIR/bin/fslmerge -y $tmpdir/ventmask_anterior $tmpdir/SEL $tmpdir/ventmask_anterior
+    VENTlastcorslice=$tmpdir/SEL    
+    idslice1=`echo $idslice1 -1 | bc`
+    fi
+done
+
+mv $tmpdir/ventmask_anterior.nii.gz $tmpdir/ventmask_unfilled.nii.gz
+# fill holes in the ventricle mask (try to include calcifications in the ventricles)
+$FSLDIR/bin/fslmaths $tmpdir/ventmask_unfilled.nii.gz -fillh26 $tmpdir/ventmask.nii.gz
+# non-ventricles mask
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_brain_pve_0_thr09 -sub $tmpdir/ventmask $tmpdir/nonventmask
+# add outer rim to nonvent mask for calculating distances
+$FSLDIR/bin/fslmaths ${strucimg}_brain_mask -dilF -sub ${strucimg}_brain_mask $tmpdir/${strucimg}_brain_outerrim
+$FSLDIR/bin/fslmaths $tmpdir/nonventmask -add $tmpdir/${strucimg}_brain_outerrim -bin $tmpdir/nonventmask
+
+# threshold CSF mask at 0.1 and exclude subcortical structures
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_brain_pve_0.nii.gz -thr 0.1 -bin -mas $tmpdir/${strucimg}_subcortexcl $tmpdir/${strucimg}_pve_0_masked
+
+# calculate distance from ventricles and non ventricles within the thresholded CSF map
+${FSLDIR}/bin/distancemap -i $tmpdir/nonventmask --secondim=$tmpdir/ventmask -o $tmpdir/${strucimg}_dist2nonventPOS_ventNEG
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_dist2nonventPOS_ventNEG -mas $tmpdir/${strucimg}_pve_0_masked $tmpdir/${strucimg}_dist2nonventPOS_ventNEG
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_dist2nonventPOS_ventNEG -bin -add $tmpdir/nonventmask -bin $tmpdir/${strucimg}_CSFmask
+
+# Add an outerrim from the brain mask and generate use the single biggest (3D) cluster as the basis of the cortical CSF
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_CSFmask -mas ${strucimg}_brain_mask -add $tmpdir/${strucimg}_brain_outerrim $tmpdir/${strucimg}_CSFmask_outerrim
+$FSLDIR/share/fsl/bin/cluster -i $tmpdir/${strucimg}_CSFmask_outerrim -t 0.5 --oindex=$tmpdir/${strucimg}_CSF_index --connectivity=6 --no_table
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_CSF_index -thr `$FSLDIR/bin/fslstats $tmpdir/${strucimg}_CSF_index -P 100` -bin $tmpdir/${strucimg}_CSFmask2
+
+# Create WM mask
+echo creating WM mask
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_CSFmask2 -kernel sphere 3 -dilF -binv $tmpdir/${strucimg}_GMmaskexcl
+# removing ventricles and subcortical structures from the  mask 
+$FSLDIR/bin/fslmaths $tmpdir/${strucimg}_GMmaskexcl -sub $tmpdir/ventmask -mul $tmpdir/${strucimg}_subcortexcl -bin ${strucimg}_WMmask
+# removing CSF thresholded at 0.9 (to remove possible residuals of ventricles, not identified by the ventricles segmentation) 
+$FSLDIR/bin/fslmaths ${strucimg}_WMmask -sub $tmpdir/${strucimg}_brain_pve_0_thr09 -bin ${strucimg}_WMmask
+# saves ventricle mask
+imcp $tmpdir/ventmask ${strucimg}_ventmask
+
+# removes temporary directory and goes back to original directory
+if [ $intermediateON == 0 ] ; then
+rm -r $tmpdir
+else
+echo "intermediate files in $tmpdir"
+fi
+cd ${origdir}
+
+exit 0
+
