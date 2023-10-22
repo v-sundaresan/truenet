@@ -111,7 +111,7 @@ To begin with we recommend that you try one of the pretrained models that is sup
 
 Note that one reason that things might not work well is if the preprocessing fails, so make sure you check the preprocessing results before running trunet (looking at the images in _fsleyes_ is normally the best way to check if the registrations, brain extractions and bias field corrections are good or not).
 
-The simplest way to choose which pretrained model to choose is just by looking at example images from those datasets (see [WMH challenge](https://wmh.isi.uu.nl/) and UK Biobank) and deciding which ones look closer to yours or not.  One of the reasons that different models are needed is that images vary between different MRI sequences and scanners.  Sometimes the differences are obvious to the eye and sometimes not, and deep learning networks can sometimes be sensitive to subtle differences.  If you are not sure which is closest then pick one and try it, and then try the other one if you are not happy.
+The simplest way to choose which pretrained model to choose is just by looking at example images from those datasets (see [WMH challenge](https://wmh.isi.uu.nl/) and [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data)) and deciding which ones look closer to yours or not.  One of the reasons that different models are needed is that images vary between different MRI sequences and scanners.  Sometimes the differences are obvious to the eye and sometimes not, and deep learning networks can sometimes be sensitive to subtle differences.  If you are not sure which is closest then pick one and try it, and then try the other one if you are not happy.
 
 When performing a fine tuning operation it is necessary to supply your own labelled images (i.e. images and manual segmentations) and for this to work we recommend that you have at least 14 images (though you can try with less and see if you are lucky). Typically, the more you have the better your chances of it adapting well to the characteristics of your images and/or the specifics of your segmentation protocol/preferences. Normally we would recommend trying fine tuning before training from scratch (and the latter isn't needed if your fine tuning results are good) but the one exception to this is when your images are obviously very different to those in the pretrained datasets, as in this case you are unlikely to get a good result from fine tuning.
 
@@ -179,7 +179,7 @@ Subcommands available:
 
 #### Pretrained models
 
- - Currently pretrained models, based on the [MWSC](linkhere) (MICCAI WMH Segmentation Challenge) and [UKBB](linkhere) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
+ - Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
 
  - These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/Models' folder.
 
