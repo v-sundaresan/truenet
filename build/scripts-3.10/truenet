@@ -1,4 +1,4 @@
-#!/usr/bin/env fslpython
+#!/Users/vaanathi/opt/anaconda3/envs/vaanu/bin/python
 import argparse
 import sys
 import pkg_resources
