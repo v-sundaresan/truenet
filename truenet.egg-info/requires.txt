@@ -1,5 +1,0 @@
-nibabel
-scipy
-torch
-numpy
-scikit-image
