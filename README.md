@@ -197,12 +197,10 @@ Usage: truenet evaluate -i <input_directory> -m <model_directory> -o <output_dir
 
 Compulsory arguments:
        -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for testing
-       -m, --model_name                      Model basename with absolute path (will not be considered if optional argument -p=True)
+       -m, --model_name                      Model basename with absolute path (if you want to use pretrained model, use mwsc/ukbb)
        -o, --output_dir                      Path to the directory for saving output predictions
 
 Optional arguments:
-       -p, --pretrained_model                Whether to use a pre-trained model, if selected True, -m (compulsory argument will not be onsidered) [default = False]
-       -pmodel, --pretrained_model_name      Pre-trained model to be used: mwsc, ukbb [default = mwsc]
        -nclass, --num_classes                Number of classes in the labels used for training the model (for both pretrained models, -nclass=2) default = 2]
        -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]
        -cv_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
