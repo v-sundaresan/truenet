@@ -230,6 +230,7 @@ def evaluate(args):
         raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
     if args.model_name == 'mwsc_flair':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_flair')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -237,6 +238,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/flairmodel')
         model_name = 'Truenet_MWSC_FLAIR'
     elif args.model_name == 'mwsc_t1':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_t1')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -244,6 +246,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/t1model')
         model_name = 'Truenet_MWSC_T1'
     elif args.model_name == 'mwsc':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -251,6 +254,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
         model_name = 'Truenet_MWSC_FLAIR_T1'
     elif args.model_name == 'ukbb_flair':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_flair')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -258,6 +262,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/flairmodel')
         model_name = 'Truenet_UKBB_FLAIR'
     elif args.model_name == 'ukbb_t1':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_t1')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -265,6 +270,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbbt1/model')
         model_name = 'Truenet_UKBB_T1'
     elif args.model_name == 'ukbb':
+        pretrained = True
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -272,6 +278,7 @@ def evaluate(args):
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
         model_name = 'Truenet_UKBB_FLAIR_T1'
     else:
+        pretrained = False
         if os.path.isfile(args.model_name + '_axial.pth') is False or \
                 os.path.isfile(args.model_name + '_sagittal.pth') is False or \
                 os.path.isfile(args.model_name + '_coronal.pth') is False:
@@ -287,7 +294,7 @@ def evaluate(args):
     # Create the training parameters dictionary
     eval_params = {'Nclass': args.num_classes,
                    'EveryN': args.cp_everyn_N,
-                   'Pretrained': args.pretrained_model,
+                   'Pretrained': pretrained,
                    'Modelname': model_name
                    }
 

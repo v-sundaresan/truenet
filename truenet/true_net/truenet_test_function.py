@@ -32,7 +32,6 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = eval_params['Nclass']
-    pretrained = eval_params['Pretrained']
 
     model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
     model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
@@ -45,67 +44,31 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     model_sagittal = nn.DataParallel(model_sagittal)
     model_coronal = nn.DataParallel(model_coronal)
 
-    if pretrained:
-        if load_case == 'last':
-            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+    model_name = eval_params['Modelname']
 
-            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+    try:
+        model_path = os.path.join(model_dir, model_name + '_axial.pth')
+        model_axial = truenet_utils.loading_model(model_path, model_axial)
 
-            model_path = os.path.join(model_dir, 'Truenet_model_beforeES_coronalal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
-        elif load_case == 'best':
-            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+        model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
+        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
 
-            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
-
-            model_path = os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
-        elif load_case == 'everyN':
-            cpn = eval_params['EveryN']
-            try:
-                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_axial.pth')
-                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
-
-                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_sagittal.pth')
-                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
-
-                model_path = os.path.join(model_dir, 'Truenet_model_epoch' + str(cpn) + '_coronal.pth')
-                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
-            except ImportError:
-                raise ImportError(
-                    'Incorrect N value provided for the available pretrained models')
-        else:
-            raise ValueError("Invalid saving condition provided! Valid options: best, specific, last")
-    else:
-        model_name = eval_params['Modelname']
-
+        model_path = os.path.join(model_dir, model_name + '_coronal.pth')
+        model_coronal = truenet_utils.loading_model(model_path, model_coronal)
+    except:
         try:
             model_path = os.path.join(model_dir, model_name + '_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial)
+            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
 
             model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
 
             model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal)
-        except:
-            try:
-                model_path = os.path.join(model_dir, model_name + '_axial.pth')
-                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
-
-                model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
-
-                model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
-            except ImportError:
-                raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
-                                  model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
-                                  'does not appear to be a valid model file')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+        except ImportError:
+            raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
+                              model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
+                              'does not appear to be a valid model file')
 
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
