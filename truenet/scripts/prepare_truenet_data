@@ -58,7 +58,7 @@ keepint=no
 distmaps=yes
 
 if [ $# -eq 0 ] ; then usage; exit 0; fi
-if [ $# -lt 4 ] ; then usage; exit 1; fi
+if [ $# -lt 2 ] ; then usage; exit 1; fi
 niter=0;
 while [ $# -ge 1 ] ; do
     niter=`echo $niter + 1 | bc`;
