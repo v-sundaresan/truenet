@@ -7,6 +7,6 @@ setup(name='truenet',
 	description='DL method for WMH segmentation',
 	author='Vaanathi Sundaresan',
 	install_requires=install_requires,
-    scripts=['truenet/scripts/truenet', 'truenet/scripts/prepare_truenet_data'],
+    scripts=['truenet/scripts/truenet', 'truenet/scripts/prepare_truenet_data', 'truenet/scripts/make_WMmask_flair'],
 	packages=find_packages(),
 	include_package_data=True)
