@@ -6,7 +6,7 @@
 
 ######
 
-if [ $# -lt 3 ] ; then
+if [ $# -lt 2 ] ; then
   echo "Usage: `basename $0` --FLAIR=<FLAIR_image_name> --T1=<T1_image_name> --outname=<output_basename> [--manualmask=<manualmask_name] [--nodistmaps] [--keepintermediate] [-v]"
   echo " "
   echo "The script applies the preprocessing pipeline on FLAIR, T1 and WM mask to be used in FSL truenet with a specified output basename"
