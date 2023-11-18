@@ -140,7 +140,7 @@ The overall naming conventions are shown in the table below:
 ### Pretrained models
 
 Names of arguments for -m for various pretrained models are given in the table below:
-| Model | Pretrained on | Naming format  |
+| Model | Pretrained on | Naming format |
 | :-----: | :---: | :---: |
 | Single channel, FLAIR only | MICCAI WMH Segmentation Challenge Data | mwsc_flair| 
 | Single channel, T1 only | MICCAI WMH Segmentation Challenge Data | mwsc_t1| 
@@ -150,7 +150,10 @@ Names of arguments for -m for various pretrained models are given in the table b
 | Single channel, FLAIR and T1 | UK Biobank dataset | ukbb | 
 
 #### Pretrained model recommendations:
-It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
+
+ - It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
+ - Out of the two modalities, FLAIR is better and hence use mwsc_flair or ukbb_flair.
+ - mwsc models are ideal for fine-tuning on small datasets (<20 subjects) while ukbb models are better for larger ones.
 
 ---
 **_IMPORTANT NOTE:_**  
@@ -170,7 +173,7 @@ and then you can run truenet commands using the pretrained models as if they wer
 
 `mkdir DatasetA/results001`
 
-`truenet evaluate -i DatasetA/sub001 -m /home/yourname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results001`
+`truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
 
 ---
 
@@ -178,9 +181,9 @@ and then you can run truenet commands using the pretrained models as if they wer
 
 `mkdir DatasetA/model_finetuned`
 
-`truenet fine_tune -i DatasetA/Training-partial -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss nweighted`
+`truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
 
-    - then apply this model to a new subject:
+  - then apply this model to a new subject:
 
 `truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
@@ -190,7 +193,11 @@ and then you can run truenet commands using the pretrained models as if they wer
 
 `mkdir DatasetA/model`
 
-`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss nweighted`
+`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
+
+ - then apply this model to a new subject:
+
+`truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
 ---
 ---
