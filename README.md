@@ -152,12 +152,14 @@ Names of arguments for -m for various pretrained models are given in the table b
 #### Pretrained model recommendations:
 It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
 
-**_NOTE:_**  Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link. These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder. Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
+---
+**_NOTE:TO BE DEPRECATED SOON_**  Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link. These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder. Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
 To do this, once you download the models into a folder, please type the following in the command prompt:
 ```
 export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
 ```
 and then you can run truenet commands using the pretrained models as if they were integrated into FSL. The export command needs to be done once for each terminal that you open, prior to running truenet.
+---
 
 ### Examples
 
