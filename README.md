@@ -127,6 +127,13 @@ When running truenet it is necessary to use certain specific names and locations
    - preprocessed images: *subject*_FLAIR.nii.gz and/or *subject*_T1.nii.gz
    - labelled images: (i.e. manual segmentations) need to be named *subject*_manualmask.nii.gz
    - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
+  
+The overall naming conventions are shown in the table below:
+| File | Name  |
+| :-----: | :---: |
+| Preprocessed Input FLAIR | <subject_name>_FLAIR.nii.gz| 
+| :-----: | :---: |
+| Preprocessed Input T1 | <subject_name>_T1.nii.gz| 
 
 ### Examples
 
