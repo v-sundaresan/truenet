@@ -28,11 +28,26 @@ def train(args):
     if not os.path.isdir(inp_dir):
         raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
-    input_flair_paths = glob.glob(os.path.join(inp_dir,'*_FLAIR.nii')) + \
-                        glob.glob(os.path.join(inp_dir,'*_FLAIR.nii.gz'))
+    flairflag = 0
+    t1flag = 0
 
-    if len(input_flair_paths) == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR images / filenames NOT in required format')
+    input_flair_paths = glob.glob(os.path.join(inp_dir,'*_FLAIR.nii')) + \
+              glob.glob(os.path.join(inp_dir,'*_FLAIR.nii.gz'))
+    flairflag = 1
+
+    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                  glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
+    t1flag = 1
+
+    if flairflag == 0 and t1flag == 0:
+        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
+
+    if flairflag == 1:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
+                            glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    else:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                         glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
     if os.path.isdir(args.model_dir) is False:
         raise ValueError(args.model_dir + ' does not appear to be a valid directory')
@@ -61,16 +76,38 @@ def train(args):
 
     # Create a list of dictionaries containing required filepaths for the input subjects
     subj_name_dicts = []
-    for l in range(len(input_flair_paths)):
-        basepath = input_flair_paths[l].split("_FLAIR.nii")[0]
-        basename = basepath.split(os.sep)[-1]
-
-        if os.path.isfile(basepath + '_T1.nii.gz'):
-            t1_path_name = basepath + '_T1.nii.gz'
-        elif os.path.isfile(basepath + '_T1.nii'):
-            t1_path_name = basepath + '_T1.nii'
+    t1_count = 0
+    flair_count = 0
+    for l in range(len(input_paths)):
+        flair_path_name = None
+        t1_path_name = None
+        if flairflag == 1:
+            basepath = input_paths[l].split("_FLAIR.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            flair_path_name = input_paths[l]
+            flair_count += 1
+            print('FLAIR image found for ' + basename, flush=True)
+            if os.path.isfile(basepath + '_T1.nii.gz'):
+                t1_path_name = basepath + '_T1.nii.gz'
+                t1_count += 1
+            elif os.path.isfile(basepath + '_T1.nii'):
+                t1_path_name = basepath + '_T1.nii'
+                t1_count += 1
+            else:
+                print('T1 image not found for ' + basename + ', continuing...', flush=True)
         else:
-            raise ValueError('T1 file does not exist for ' + basename)
+            basepath = input_paths[l].split("_T1.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            t1_path_name = input_paths[l]
+            print('T1 image found for ' + basename, flush=True)
+            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
+
+        # if os.path.isfile(basepath + '_T1.nii.gz'):
+        #     t1_path_name = basepath + '_T1.nii.gz'
+        # elif os.path.isfile(basepath + '_T1.nii'):
+        #     t1_path_name = basepath + '_T1.nii'
+        # else:
+        #     raise ValueError('T1 file does not exist for ' + basename)
 
         print(os.path.join(label_dir, basename + '_manualmask.nii.gz'), flush=True)
         if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
@@ -100,13 +137,24 @@ def train(args):
             gmdist_path_name = None
             ventdist_path_name = None
 
-        subj_name_dict = {'flair_path': input_flair_paths[l],
+        subj_name_dict = {'flair_path': flair_path_name,
                           't1_path': t1_path_name,
                           'gt_path': gt_path_name,
                           'gmdist_path': gmdist_path_name,
                           'ventdist_path': ventdist_path_name,
                           'basename': basename}
         subj_name_dicts.append(subj_name_dict)
+
+    if flair_count > 0:
+        if 0 < t1_count < flair_count or t1_count > flair_count:
+            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
+        elif t1_count == 0:
+            num_channels = 1
+        elif t1_count == flair_count:
+            num_channels = 2
+    else:
+        if t1_count > 0:
+            num_channels = 1
 
     if isinstance(args.init_learng_rate, float) is False:
         raise ValueError('Initial learning rate must be a float value')
@@ -166,7 +214,8 @@ def train(args):
                        'Aug_factor': args.aug_factor,
                        'EveryN': args.cp_everyn_N,
                        'Nclass': args.num_classes,
-                       'SaveResume': args.save_resume_training
+                       'SaveResume': args.save_resume_training,
+                       'Numchannels': num_channels
                        }
 
     if args.save_full_model == 'True':
@@ -197,34 +246,82 @@ def evaluate(args):
     if not os.path.isdir(inp_dir):
         raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
+    flairflag = 0
+    t1flag = 0
+
     input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
                         glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    flairflag = 1
 
-    if len(input_flair_paths) == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR images / filenames NOT in required format')
+    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
+    t1flag = 1
+
+    if flairflag == 0 and t1flag == 0:
+        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
+
+    if flairflag == 1:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    else:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
     if os.path.isdir(out_dir) is False:
         raise ValueError(out_dir + ' does not appear to be a valid directory')
 
     # Create a list of dictionaries containing required filepaths for the test subjects
     subj_name_dicts = []
-    for l in range(len(input_flair_paths)):
-        basepath = input_flair_paths[l].split("_FLAIR.nii")[0]
-        basename = basepath.split(os.sep)[-1]
-
-        if os.path.isfile(basepath + '_T1.nii.gz'):
-            t1_path_name = basepath + '_T1.nii.gz'
-        elif os.path.isfile(basepath + '_T1.nii'):
-            t1_path_name = basepath + '_T1.nii'
+    t1_count = 0
+    flair_count = 0
+    for l in range(len(input_paths)):
+        flair_path_name = None
+        t1_path_name = None
+        if flairflag == 1:
+            basepath = input_paths[l].split("_FLAIR.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            flair_path_name = input_paths[l]
+            flair_count += 1
+            print('FLAIR image found for ' + basename, flush=True)
+            if os.path.isfile(basepath + '_T1.nii.gz'):
+                t1_path_name = basepath + '_T1.nii.gz'
+                t1_count += 1
+            elif os.path.isfile(basepath + '_T1.nii'):
+                t1_path_name = basepath + '_T1.nii'
+                t1_count += 1
+            else:
+                print('T1 image not found for ' + basename + ', continuing...', flush=True)
         else:
-            raise ValueError('T1 file does not exist for ' + basename)
+            basepath = input_paths[l].split("_T1.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            t1_path_name = input_paths[l]
+            print('T1 image found for ' + basename, flush=True)
+            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
 
-        subj_name_dict = {'flair_path': input_flair_paths[l],
+        # if os.path.isfile(basepath + '_T1.nii.gz'):
+        #     t1_path_name = basepath + '_T1.nii.gz'
+        # elif os.path.isfile(basepath + '_T1.nii'):
+        #     t1_path_name = basepath + '_T1.nii'
+        # else:
+        #     raise ValueError('T1 file does not exist for ' + basename)
+
+        subj_name_dict = {'flair_path': flair_path_name,
                           't1_path': t1_path_name,
                           'gmdist_path': None,
                           'ventdist_path': None,
                           'basename': basename}
         subj_name_dicts.append(subj_name_dict)
+
+    if flair_count > 0:
+        if 0 < t1_count < flair_count or t1_count > flair_count:
+            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
+        elif t1_count == 0:
+            num_channels = 1
+        elif t1_count == flair_count:
+            num_channels = 2
+    else:
+        if t1_count > 0:
+            num_channels = 1
 
     if args.num_classes < 1:
         raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
@@ -234,7 +331,7 @@ def evaluate(args):
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_flair')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if modeldir is None:
+            if model_dir is None:
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/flairmodel')
         model_name = 'Truenet_MWSC_FLAIR'
     elif args.model_name == 'mwsc_t1':
@@ -242,7 +339,7 @@ def evaluate(args):
         model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_t1')
         if not os.path.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if modeldir is None:
+            if model_dir is None:
                 raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/t1model')
         model_name = 'Truenet_MWSC_T1'
     elif args.model_name == 'mwsc':
@@ -295,7 +392,9 @@ def evaluate(args):
     eval_params = {'Nclass': args.num_classes,
                    'EveryN': args.cp_everyn_N,
                    'Pretrained': pretrained,
-                   'Modelname': model_name
+                   'Modelname': model_name,
+                   'Numchannels': num_channels,
+                   'Use_CPU': args.use_cpu
                    }
 
     if args.cp_load_type not in ['best', 'last', 'specific']:
@@ -326,11 +425,26 @@ def fine_tune(args):
     if not os.path.isdir(inp_dir):
         raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
+    flairflag = 0
+    t1flag = 0
+
     input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
                         glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    flairflag = 1
 
-    if len(input_flair_paths) == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR images / filenames NOT in required format')
+    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
+    t1flag = 1
+
+    if flairflag == 0 and t1flag == 0:
+        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
+
+    if flairflag == 1:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    else:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
     if os.path.isdir(args.output_dir) is False:
         raise ValueError(args.output_dir + ' does not appear to be a valid directory')
@@ -359,16 +473,38 @@ def fine_tune(args):
 
     # Create a list of dictionaries containing required filepaths for the fine-tuning subjects
     subj_name_dicts = []
-    for l in range(len(input_flair_paths)):
-        basepath = input_flair_paths[l].split("_FLAIR.nii")[0]
-        basename = basepath.split(os.sep)[-1]
-
-        if os.path.isfile(basepath + '_T1.nii.gz'):
-            t1_path_name = basepath + '_T1.nii.gz'
-        elif os.path.isfile(basepath + '_T1.nii'):
-            t1_path_name = basepath + '_T1.nii'
+    t1_count = 0
+    flair_count = 0
+    for l in range(len(input_paths)):
+        flair_path_name = None
+        t1_path_name = None
+        if flairflag == 1:
+            basepath = input_paths[l].split("_FLAIR.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            flair_path_name = input_paths[l]
+            flair_count += 1
+            print('FLAIR image found for ' + basename, flush=True)
+            if os.path.isfile(basepath + '_T1.nii.gz'):
+                t1_path_name = basepath + '_T1.nii.gz'
+                t1_count += 1
+            elif os.path.isfile(basepath + '_T1.nii'):
+                t1_path_name = basepath + '_T1.nii'
+                t1_count += 1
+            else:
+                print('T1 image not found for ' + basename + ', continuing...', flush=True)
         else:
-            raise ValueError('T1 file does not exist for ' + basename)
+            basepath = input_paths[l].split("_T1.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            t1_path_name = input_paths[l]
+            print('T1 image found for ' + basename, flush=True)
+            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
+
+        # if os.path.isfile(basepath + '_T1.nii.gz'):
+        #     t1_path_name = basepath + '_T1.nii.gz'
+        # elif os.path.isfile(basepath + '_T1.nii'):
+        #     t1_path_name = basepath + '_T1.nii'
+        # else:
+        #     raise ValueError('T1 file does not exist for ' + basename)
 
         if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
             gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii.gz')
@@ -397,13 +533,24 @@ def fine_tune(args):
             gmdist_path_name = None
             ventdist_path_name = None
 
-        subj_name_dict = {'flair_path': input_flair_paths[l],
+        subj_name_dict = {'flair_path': flair_path_name,
                           't1_path': t1_path_name,
                           'gt_path':gt_path_name,
                           'gmdist_path': gmdist_path_name,
                           'ventdist_path': ventdist_path_name,
                           'basename': basename}
         subj_name_dicts.append(subj_name_dict)
+
+    if flair_count > 0:
+        if 0 < t1_count < flair_count or t1_count > flair_count:
+            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
+        elif t1_count == 0:
+            num_channels = 1
+        elif t1_count == flair_count:
+            num_channels = 2
+    else:
+        if t1_count > 0:
+            num_channels = 1
 
     if isinstance(args.init_learng_rate, float) is False:
         raise ValueError('Initial learning rate must be a float value')
@@ -452,23 +599,56 @@ def fine_tune(args):
     else:
         save_wei = True
 
-    if args.pretrained_model == 'True':
-        model_name = None
-        if args.pretrained_model_name == 'mwsc':
-            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
-            if not os.path.exists(modeldir):
-                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-                if modeldir is None:
-                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
-        elif args.pretrained_model_name == 'ukbb':
-            modeldir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
-            if not os.path.exists(modeldir):
-                modeldir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-                if modeldir is None:
-                    raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
-        else:
-            raise ValueError('Invalid name for Pretrained model: Valid options: mwsc, ukbb')
+    if args.model_name == 'mwsc_flair':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_flair')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/flairmodel')
+        model_name = 'Truenet_MWSC_FLAIR'
+    elif args.model_name == 'mwsc_t1':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_t1')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/t1model')
+        model_name = 'Truenet_MWSC_T1'
+    elif args.model_name == 'mwsc':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
+        model_name = 'Truenet_MWSC_FLAIR_T1'
+    elif args.model_name == 'ukbb_flair':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_flair')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/flairmodel')
+        model_name = 'Truenet_UKBB_FLAIR'
+    elif args.model_name == 'ukbb_t1':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_t1')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbbt1/model')
+        model_name = 'Truenet_UKBB_T1'
+    elif args.model_name == 'ukbb':
+        pretrained = True
+        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
+        if not os.path.exists(model_dir):
+            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
+            if model_dir is None:
+                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
+        model_name = 'Truenet_UKBB_FLAIR_T1'
     else:
+        pretrained = False
         if os.path.isfile(args.model_name + '_axial.pth') is False or \
                 os.path.isfile(args.model_name + '_sagittal.pth') is False or \
                 os.path.isfile(args.model_name + '_coronal.pth') is False:
@@ -476,11 +656,10 @@ def fine_tune(args):
                              ', ' + os.path.basename(args.model_name) + '_axial.pth or' +
                              os.path.basename(args.model_name) + '_sagittal.pth or' +
                              os.path.basename(args.model_name) + '_coronal.pth ' +
-                              'does not appear to be a valid model file')
+                             'does not appear to be a valid model file')
         else:
             model_dir = os.path.dirname(args.model_name)
             model_name = os.path.basename(args.model_name)
-
 
     # Create the fine-tuning parameters dictionary
     finetuning_params = {'Finetuning_learning_rate': args.init_learng_rate,
@@ -501,9 +680,10 @@ def fine_tune(args):
                          'Finetuning_layers': args.ft_layers,
                          'Load_type': args.cp_load_type,
                          'EveryNload': args.cpload_everyn_N,
-                         'Pretrained': args.pretrained_model,
+                         'Pretrained': pretrained,
                          'Modelname': model_name,
-                         'SaveResume': args.save_resume_training
+                         'SaveResume': args.save_resume_training,
+                         'Numchannels': num_channels
                          }
 
     if args.cp_save_type not in ['best', 'last', 'everyN']:
@@ -532,11 +712,26 @@ def cross_validate(args):
     if not os.path.isdir(inp_dir):
         raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
+    flairflag = 0
+    t1flag = 0
+
     input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
                         glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    flairflag = 1
 
-    if len(input_flair_paths) == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR images / filenames NOT in required format')
+    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
+    t1flag = 1
+
+    if flairflag == 0 and t1flag == 0:
+        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
+
+    if flairflag == 1:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
+    else:
+        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
+                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
     if os.path.isdir(args.output_dir) is False:
         raise ValueError(args.output_dir + ' does not appear to be a valid directory')
@@ -574,16 +769,38 @@ def cross_validate(args):
 
     # Create a list of dictionaries containing required filepaths for the input subjects
     subj_name_dicts = []
-    for l in range(len(input_flair_paths)):
-        basepath = input_flair_paths[l].split("_FLAIR.nii")[0]
-        basename = basepath.split(os.sep)[-1]
-
-        if os.path.isfile(basepath + '_T1.nii.gz'):
-            t1_path_name = basepath + '_T1.nii.gz'
-        elif os.path.isfile(basepath + '_T1.nii'):
-            t1_path_name = basepath + '_T1.nii'
+    t1_count = 0
+    flair_count = 0
+    for l in range(len(input_paths)):
+        flair_path_name = None
+        t1_path_name = None
+        if flairflag == 1:
+            basepath = input_paths[l].split("_FLAIR.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            flair_path_name = input_paths[l]
+            flair_count += 1
+            print('FLAIR image found for ' + basename, flush=True)
+            if os.path.isfile(basepath + '_T1.nii.gz'):
+                t1_path_name = basepath + '_T1.nii.gz'
+                t1_count += 1
+            elif os.path.isfile(basepath + '_T1.nii'):
+                t1_path_name = basepath + '_T1.nii'
+                t1_count += 1
+            else:
+                print('T1 image not found for ' + basename + ', continuing...', flush=True)
         else:
-            raise ValueError('T1 file does not exist for ' + basename)
+            basepath = input_paths[l].split("_T1.nii")[0]
+            basename = basepath.split(os.sep)[-1]
+            t1_path_name = input_paths[l]
+            print('T1 image found for ' + basename, flush=True)
+            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
+
+        # if os.path.isfile(basepath + '_T1.nii.gz'):
+        #     t1_path_name = basepath + '_T1.nii.gz'
+        # elif os.path.isfile(basepath + '_T1.nii'):
+        #     t1_path_name = basepath + '_T1.nii'
+        # else:
+        #     raise ValueError('T1 file does not exist for ' + basename)
 
         if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
             gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii.gz')
@@ -612,13 +829,24 @@ def cross_validate(args):
             gmdist_path_name = None
             ventdist_path_name = None
 
-        subj_name_dict = {'flair_path': input_flair_paths[l],
+        subj_name_dict = {'flair_path': flair_path_name,
                           't1_path': t1_path_name,
                           'gt_path': gt_path_name,
                           'gmdist_path': gmdist_path_name,
                           'ventdist_path': ventdist_path_name,
                           'basename': basename}
         subj_name_dicts.append(subj_name_dict)
+
+    if flair_count > 0:
+        if 0 < t1_count < flair_count or t1_count > flair_count:
+            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
+        elif t1_count == 0:
+            num_channels = 1
+        elif t1_count == flair_count:
+            num_channels = 2
+    else:
+        if t1_count > 0:
+            num_channels = 1
 
     if isinstance(args.init_learng_rate, float) is False:
         raise ValueError('Initial learning rate must be a float value')
@@ -686,7 +914,8 @@ def cross_validate(args):
                  'Aug_factor': args.aug_factor,
                  'Nclass': args.num_classes,
                  'EveryN': args.cp_everyn_N,
-                 'SaveResume': args.save_resume_training
+                 'SaveResume': args.save_resume_training,
+                 'Numchannels': num_channels
                  }
 
     if args.save_full_model == 'True':

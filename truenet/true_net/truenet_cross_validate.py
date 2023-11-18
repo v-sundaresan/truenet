@@ -39,10 +39,12 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
     assert len(sub_name_dicts) >= 5, "Number of distinct subjects for Leave-one-out validation cannot be less than 5"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = cv_params['Nclass']
+    num_channels = cv_params['Numchannels']
 
-    model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
-    model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
-    model_coronal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='coronal')
+    model_axial = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='axial')
+    model_sagittal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64,
+                                           plane='sagittal')
+    model_coronal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='coronal')
 
     model_axial.to(device=device)
     model_sagittal.to(device=device)

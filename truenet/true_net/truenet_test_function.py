@@ -29,13 +29,18 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     :param verbose: bool, display debug messages
     '''
     assert len(sub_name_dicts) > 0, "There must be at least 1 subject for testing."
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    use_cpu = eval_params['Use_CPU']
+    if use_cpu is True:
+        device = torch.device("cpu")
+    else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = eval_params['Nclass']
+    num_channels = eval_params['Numchannels']
 
-    model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
-    model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
-    model_coronal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='coronal')
+    model_axial = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='axial')
+    model_sagittal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64,
+                                           plane='sagittal')
+    model_coronal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='coronal')
 
     model_axial.to(device=device)
     model_sagittal.to(device=device)

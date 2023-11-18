@@ -42,10 +42,11 @@ def main(sub_name_dicts, tr_params, aug=True, weighted=True,
     req_plane = tr_params['Acq_plane'] # string ('axial', 'sagittal', 'coronal', 'all')
     train_prop = tr_params['Train_prop'] # scale (0,1)
     nclass = tr_params['Nclass']
+    num_channels = tr_params['Numchannels']
 
-    model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
-    model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
-    model_coronal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='coronal')
+    model_axial = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='axial')
+    model_sagittal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='sagittal')
+    model_coronal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='coronal')
 
     model_axial.to(device=device)
     model_sagittal.to(device=device)

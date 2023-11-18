@@ -59,6 +59,8 @@ if __name__ == "__main__":
                                                                                            'if you want to use pretrained model, use mwsc/ukbb')
     requiredNamedevaluate.add_argument('-o', '--output_dir', type=str, required=True, help='Directory for saving predictions')
     optionalNamedevaluate = parser_evaluate.add_argument_group('Optional named arguments')
+    optionalNamedevaluate.add_argument('-cpu', '--use_cpu', type=bool, required=False, default=False,
+                                    help='Force the model to evaluate the model on CPU (default=2)')
     # optionalNamedevaluate.add_argument('-p', '--pretrained_model', type=bool, required=False, default=False, help='Whether to use a standard pre-trained model (default=False)')
     # optionalNamedevaluate.add_argument('-pmodel', '--pretrained_model_name', type=str, required=False, default='mwsc', help='Pre-trained model to be used: mwsc, ukbb (default = mwsc)')
     optionalNamedevaluate.add_argument('-nclass', '--num_classes', type = int, required=False, default=2,

@@ -35,9 +35,13 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = ft_params['Nclass']
-    model_axial = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='axial')
-    model_sagittal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='sagittal')
-    model_coronal = truenet_model.TrUENet(n_channels=2, n_classes=nclass, init_channels=64, plane='coronal')
+    num_channels = ft_params['Numchannels']
+
+    model_axial = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='axial')
+    model_sagittal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64,
+                                           plane='sagittal')
+    model_coronal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='coronal')
+
 
     model_axial.to(device=device)
     model_sagittal.to(device=device)
