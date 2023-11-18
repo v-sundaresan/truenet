@@ -119,17 +119,17 @@ def train(args):
 
         if args.loss_function == 'weighted':
             weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii')
+            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
             else:
                 raise ValueError('GM distance file does not exist for ' + basename)
 
-            if os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdist.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdist.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii')
+            if os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdistmap.nii.gz')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdistmap.nii')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
             else:
                 raise ValueError('Ventricle distance file does not exist for ' + basename)
         else:
@@ -515,17 +515,17 @@ def fine_tune(args):
 
         if args.loss_function == 'weighted':
             weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii')
+            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
             else:
                 raise ValueError('GM distance file does not exist for ' + basename)
 
-            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdist.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdist.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii')
+            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
             else:
                 raise ValueError('Ventricle distance file does not exist for ' + basename)
         else:
@@ -811,17 +811,17 @@ def cross_validate(args):
 
         if args.loss_function == 'weighted':
             weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_gmdist.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_gmdist.nii')
+            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
+                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
             else:
                 raise ValueError('GM distance file does not exist for ' + basename)
 
-            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdist.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdist.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdist.nii')
+            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
+            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii')):
+                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
             else:
                 raise ValueError('Ventricle distance file does not exist for ' + basename)
         else:
