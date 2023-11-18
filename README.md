@@ -129,11 +129,13 @@ When running truenet it is necessary to use certain specific names and locations
    - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
   
 The overall naming conventions are shown in the table below:
-| File | Name  |
+| File | Naming format  |
 | :-----: | :---: |
 | Preprocessed Input FLAIR | <subject_name>_FLAIR.nii.gz| 
-| :-----: | :---: |
 | Preprocessed Input T1 | <subject_name>_T1.nii.gz| 
+| Preprocessed Input GM distance map | <subject_name>_GMdistmap.nii.gz| 
+| Preprocessed Input Ventricle distmap | <subject_name>_ventdistmap.nii.gz| 
+| Manual mask | <subject_name>_manualmask.nii.gz| 
 
 ### Examples
 
@@ -185,6 +187,19 @@ Subcommands available:
 ### Applying the TrUE-Net model (performing segmentation)
 
 #### Pretrained models
+
+Names of arguments for -m for various pretrained models are given in the table below:
+| Model | Pretrained on | Naming format  |
+| :-----: | :---: | :---: |
+| Single channel, FLAIR only | MICCAI WMH Segmentation Challenge Data | mwsc_flair| 
+| Single channel, T1 only | MICCAI WMH Segmentation Challenge Data | mwsc_t1| 
+| Two channels, FLAIR and T1 | MICCAI WMH Segmentation Challenge Data | mwsc| 
+| Single channel, FLAIR only | UK Biobank dataset | ukbb_flair| 
+| Single channel, T1 only |UK Biobank dataset | ukbb_t1| 
+| Single channel, FLAIR and T1 | UK Biobank dataset | ukbb | 
+
+##### Pretrained model recommendations:
+It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
 
  - Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
 
