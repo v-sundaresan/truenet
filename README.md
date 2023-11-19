@@ -231,9 +231,10 @@ Compulsory arguments:
        -o, --output_dir                      Path to the directory for saving output predictions
 
 Optional arguments:
+       -cpu, --use_cpu                       Force the model to evaluate the model on CPU (default=False
        -nclass, --num_classes                Number of classes in the labels used for training the model (for both pretrained models, -nclass=2) default = 2]
        -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]
-       -cv_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
+       -cp_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N                  If -cv_type = everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
        -h, --help.                           Print help message
@@ -256,12 +257,10 @@ Usage: truenet fine_tune -i <input_directory> -l <label_directory> -m <model_dir
 Compulsory arguments:
        -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning
        -l, --label_dir                       Path to the directory containing manual labels for training
-       -m, --model_dir                       Path to the directory where the trained model/weights were saved
+       -m, --model_dir                       Model basename with absolute path. If you want to use pretrained model, use mwsc/ukbb
        -o, --output_dir                      Path to the directory where the fine-tuned model/weights need to be saved
 
 Optional arguments:
-       -p, --pretrained_model                Whether to use a pre-trained model, if selected True, -m (compulsory argument will not be considered) [default = False]
-       -pmodel, --pretrained_model_name      Pre-trained model to be used: mwsc, ukbb [default = mwsc]
        -cpld_type, --cp_load_type            Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cpld_n, --cpload_everyn_N            If everyN option was chosen for loading a checkpoint, the N value [default = 10]
        -ftlayers, --ft_layers                Layers to fine-tune starting from the decoder (e.g. 1 2 -> final two two decoder layers, refer to the figure above)
@@ -280,14 +279,16 @@ Optional arguments:
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for fine-tuning. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
        -sv_mod, --save_full_model            Saving the whole fine-tuned model instead of weights alone [default = False]
+       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -cv_type, --cp_save_type              Checkpoint to be saved. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N                  If -cv_type = everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
-       -h, --help.                           Print help message
+       -h, --help                            Print help message
 ```
 
 ### Training the TrUE-Net model from scratch
@@ -319,10 +320,12 @@ Optional arguments:
        -lrm, --lr_sch_mlstone        Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma        Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer             Optimizer used for training. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size             Batch size used for training [default = 8]
        -ep, --num_epochs             Number of epochs for training [default = 60]
        -es, --early_stop_val         Number of epochs to wait for progress (early stopping) [default = 20]
        -sv_mod, --save_full_model    Saving the whole model instead of weights alone [default = False]
+       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -cv_type, --cp_save_type      Checkpoint to be saved. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N          If -cv_type=everyN, the N value [default = 10]
        -v, --verbose                 Display debug messages [default = False]
@@ -354,15 +357,19 @@ Optional arguments:
        -plane, --acq_plane                   The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all [default = all]
        -da, --data_augmentation              Applying data augmentation [default = True]
        -af, --aug_factor                     Data inflation factor for augmentation [default = 2]
+       -sv, --save_checkpoint                Whether to save any checkpoint [default=False]
        -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -ilr, --init_learng_rate              Initial LR to use in scheduler for training [0, 0.1] [default=0.0001]
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for training. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
        -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]
+       -cv_type, --cp_save_type              Checkpoint to be saved. Options: best, last, everyN [default = last]
+       -cp_n, --cp_everyn_N                  If -cv_type=everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
        -h, --help.                           Print help message
 ```
