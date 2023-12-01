@@ -127,14 +127,53 @@ When running truenet it is necessary to use certain specific names and locations
    - preprocessed images: *subject*_FLAIR.nii.gz and/or *subject*_T1.nii.gz
    - labelled images: (i.e. manual segmentations) need to be named *subject*_manualmask.nii.gz
    - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
+  
+The overall naming conventions are shown in the table below:
+| File | Naming format  |
+| :-----: | :---: |
+| Preprocessed Input FLAIR | <subject_name>_FLAIR.nii.gz| 
+| Preprocessed Input T1 | <subject_name>_T1.nii.gz| 
+| Preprocessed Input GM distance map | <subject_name>_GMdistmap.nii.gz| 
+| Preprocessed Input Ventricle distmap | <subject_name>_ventdistmap.nii.gz| 
+| Manual mask | <subject_name>_manualmask.nii.gz| 
+
+### Pretrained models
+
+Names of arguments for -m for various pretrained models are given in the table below:
+| Model | Pretrained on | Naming format |
+| :-----: | :---: | :---: |
+| Single channel, FLAIR only | MICCAI WMH Segmentation Challenge Data | mwsc_flair| 
+| Single channel, T1 only | MICCAI WMH Segmentation Challenge Data | mwsc_t1| 
+| Two channels, FLAIR and T1 | MICCAI WMH Segmentation Challenge Data | mwsc| 
+| Single channel, FLAIR only | UK Biobank dataset | ukbb_flair| 
+| Single channel, T1 only |UK Biobank dataset | ukbb_t1| 
+| Single channel, FLAIR and T1 | UK Biobank dataset | ukbb | 
+
+#### Pretrained model recommendations:
+
+ - It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
+ - Out of the two modalities, FLAIR is better and hence use mwsc_flair or ukbb_flair.
+ - mwsc models are ideal for fine-tuning on small datasets (<20 subjects) while ukbb models are better for larger ones.
+
+---
+**_IMPORTANT NOTE:_**  
+
+Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link. These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder. Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
+To do this, once you download the models into a folder, please type the following in the command prompt:
+```
+export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
+```
+and then you can run truenet commands using the pretrained models as if they were integrated into FSL. The export command needs to be done once for each terminal that you open, prior to running truenet.
+
+---
 
 ### Examples
 
- - Run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
+ - Using a pretrained model, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
 
 `mkdir DatasetA/results001`
 
-`truenet evaluate -i DatasetA/sub001 -m /home/yourname/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/results001`
+`truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
 
 ---
 
@@ -142,9 +181,9 @@ When running truenet it is necessary to use certain specific names and locations
 
 `mkdir DatasetA/model_finetuned`
 
-`truenet fine_tune -i DatasetA/Training-partial -m ~/truenet-master/truenet/pretrained_models/mwsc/MWSC_FLAIR_T1/Truenet_MWSC_FLAIR_T1 -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss nweighted`
+`truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
 
-    - then apply this model to a new subject:
+  - then apply this model to a new subject:
 
 `truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
@@ -154,7 +193,11 @@ When running truenet it is necessary to use certain specific names and locations
 
 `mkdir DatasetA/model`
 
-`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss nweighted`
+`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
+
+ - then apply this model to a new subject:
+
+`truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
 ---
 ---
@@ -177,19 +220,6 @@ Subcommands available:
 
 ### Applying the TrUE-Net model (performing segmentation)
 
-#### Pretrained models
-
- - Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link
-
- - These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder.
-
- - Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
-To do this, once you download the models into a folder, please type the following in the command prompt:
-```
-export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
-```
-and then you can run truenet commands using the pretrained models as if they were integrated into FSL. The export command needs to be done once for each terminal that you open, prior to running truenet.
-
 #### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
 
 ```
@@ -201,9 +231,10 @@ Compulsory arguments:
        -o, --output_dir                      Path to the directory for saving output predictions
 
 Optional arguments:
+       -cpu, --use_cpu                       Force the model to evaluate the model on CPU (default=False
        -nclass, --num_classes                Number of classes in the labels used for training the model (for both pretrained models, -nclass=2) default = 2]
        -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]
-       -cv_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
+       -cp_type, --cp_load_type              Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N                  If -cv_type = everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
        -h, --help.                           Print help message
@@ -226,12 +257,10 @@ Usage: truenet fine_tune -i <input_directory> -l <label_directory> -m <model_dir
 Compulsory arguments:
        -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning
        -l, --label_dir                       Path to the directory containing manual labels for training
-       -m, --model_dir                       Path to the directory where the trained model/weights were saved
+       -m, --model_dir                       Model basename with absolute path. If you want to use pretrained model, use mwsc/ukbb
        -o, --output_dir                      Path to the directory where the fine-tuned model/weights need to be saved
 
 Optional arguments:
-       -p, --pretrained_model                Whether to use a pre-trained model, if selected True, -m (compulsory argument will not be considered) [default = False]
-       -pmodel, --pretrained_model_name      Pre-trained model to be used: mwsc, ukbb [default = mwsc]
        -cpld_type, --cp_load_type            Checkpoint to be loaded. Options: best, last, everyN [default = last]
        -cpld_n, --cpload_everyn_N            If everyN option was chosen for loading a checkpoint, the N value [default = 10]
        -ftlayers, --ft_layers                Layers to fine-tune starting from the decoder (e.g. 1 2 -> final two two decoder layers, refer to the figure above)
@@ -250,14 +279,16 @@ Optional arguments:
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for fine-tuning. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
        -sv_mod, --save_full_model            Saving the whole fine-tuned model instead of weights alone [default = False]
+       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -cv_type, --cp_save_type              Checkpoint to be saved. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N                  If -cv_type = everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
-       -h, --help.                           Print help message
+       -h, --help                            Print help message
 ```
 
 ### Training the TrUE-Net model from scratch
@@ -289,10 +320,12 @@ Optional arguments:
        -lrm, --lr_sch_mlstone        Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma        Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer             Optimizer used for training. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size             Batch size used for training [default = 8]
        -ep, --num_epochs             Number of epochs for training [default = 60]
        -es, --early_stop_val         Number of epochs to wait for progress (early stopping) [default = 20]
        -sv_mod, --save_full_model    Saving the whole model instead of weights alone [default = False]
+       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -cv_type, --cp_save_type      Checkpoint to be saved. Options: best, last, everyN [default = last]
        -cp_n, --cp_everyn_N          If -cv_type=everyN, the N value [default = 10]
        -v, --verbose                 Display debug messages [default = False]
@@ -324,15 +357,19 @@ Optional arguments:
        -plane, --acq_plane                   The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all [default = all]
        -da, --data_augmentation              Applying data augmentation [default = True]
        -af, --aug_factor                     Data inflation factor for augmentation [default = 2]
+       -sv, --save_checkpoint                Whether to save any checkpoint [default=False]
        -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)
        -ilr, --init_learng_rate              Initial LR to use in scheduler for training [0, 0.1] [default=0.0001]
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for training. Options:adam, sgd [default = adam]
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
        -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]
+       -cv_type, --cp_save_type              Checkpoint to be saved. Options: best, last, everyN [default = last]
+       -cp_n, --cp_everyn_N                  If -cv_type=everyN, the N value [default = 10]
        -v, --verbose                         Display debug messages [default = False]
        -h, --help.                           Print help message
 ```
