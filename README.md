@@ -134,7 +134,7 @@ The overall naming conventions are shown in the table below:
 | Preprocessed Input FLAIR | <subject_name>_FLAIR.nii.gz| 
 | Preprocessed Input T1 | <subject_name>_T1.nii.gz| 
 | Preprocessed Input GM distance map | <subject_name>_GMdistmap.nii.gz| 
-| Preprocessed Input Ventricle distmap | <subject_name>_ventdistmap.nii.gz| 
+| Preprocessed Input Ventricle distance map | <subject_name>_ventdistmap.nii.gz| 
 | Manual mask | <subject_name>_manualmask.nii.gz| 
 
 ### Pretrained models
@@ -151,8 +151,8 @@ Names of arguments for -m for various pretrained models are given in the table b
 
 #### Pretrained model recommendations:
 
- - It is highly recommended to use both modalities (FLAIR and T1) as two channel input if it is possible. 
- - Out of the two modalities, FLAIR is better and hence use mwsc_flair or ukbb_flair.
+ - It is highly recommended to use both modalities (FLAIR and T1) as a two channel input if it is possible. 
+ - If only one modality is used then FLAIR usually gives better results than just T1 (and use mwsc_flair or ukbb_flair for FLAIR alone).
  - mwsc models are ideal for fine-tuning on small datasets (<20 subjects) while ukbb models are better for larger ones.
 
 ---
@@ -163,7 +163,7 @@ To do this, once you download the models into a folder, please type the followin
 ```
 export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
 ```
-and then you can run truenet commands using the pretrained models as if they were integrated into FSL. The export command needs to be done once for each terminal that you open, prior to running truenet.
+where you should replace _/absolute/path/to/the/model/folder_ with the path to the folder that contains the _*.pth_ files.  Then you can run truenet commands using the pretrained models as if they were integrated into FSL. The above export command needs to be done once for each terminal that you open, prior to running truenet.
 
 ---
 
