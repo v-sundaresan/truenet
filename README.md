@@ -48,7 +48,7 @@ If you use UKBB-trained model:
 To install the truenet tool do the following:
 1. Clone the git repository into your local directory.
   - If you are not familiar with GitHub then the easiest way is to use the button labelled **<> Code** (right hand side, just above the file list) on the [main truenet page](/) and select the **Download ZIP** option. After you've done this, move the zip file to where you want to have truenet installed and unzip it.
-3. Open up a terminal, go to the directory where you unzipped the file, and then run:
+3. Open up a terminal, go to the directory created when you unzipped the file, and then run:
 ```
 python setup.py install
 ```
