@@ -31,7 +31,7 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     assert len(sub_name_dicts) > 0, "There must be at least 1 subject for testing."
     use_cpu = eval_params['Use_CPU']
     if use_cpu is True:
-        device = torch.device("cpu", map_location='cpu')
+        device = torch.device("cpu")
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = eval_params['Nclass']
@@ -53,23 +53,23 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
 
     try:
         model_path = os.path.join(model_dir, model_name + '_axial.pth')
-        model_axial = truenet_utils.loading_model(model_path, model_axial)
+        model_axial = truenet_utils.loading_model(model_path, model_axial, device)
 
         model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
+        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device)
 
         model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-        model_coronal = truenet_utils.loading_model(model_path, model_coronal)
+        model_coronal = truenet_utils.loading_model(model_path, model_coronal, device)
     except:
         try:
             model_path = os.path.join(model_dir, model_name + '_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+            model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
             model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
             model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
         except ImportError:
             raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
                               model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +

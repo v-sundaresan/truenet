@@ -56,22 +56,22 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     if pretrained:
         if load_case == 'last':
             model_path = os.path.join(model_dir, 'Truenet_model_beforeES_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+            model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
             model_path = os.path.join(model_dir, 'Truenet_model_beforeES_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
             model_path = os.path.join(model_dir, 'Truenet_model_beforeES_coronalal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
         elif load_case == 'best':
             model_path = os.path.join(model_dir, 'Truenet_model_bestdice_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+            model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
             model_path = os.path.join(model_dir, 'Truenet_model_bestdice_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
             model_path = os.path.join(model_dir, 'Truenet_model_bestdice_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
         elif load_case == 'everyN':
             cpn = ft_params['EveryN']
             try:
@@ -93,23 +93,23 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
 
         try:
             model_path = os.path.join(model_dir, model_name + '_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial)
+            model_axial = truenet_utils.loading_model(model_path, model_axial, device)
 
             model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device)
 
             model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal)
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device)
         except:
             try:
                 model_path = os.path.join(model_dir, model_name + '_axial.pth')
-                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+                model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
                 model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
                 model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+                model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
             except ImportError:
                 raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
                                   model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +

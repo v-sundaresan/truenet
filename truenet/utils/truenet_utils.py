@@ -58,11 +58,17 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
     return model
 
 
-def loading_model(model_name, model, mode='weights'):
+def loading_model(model_name, model, device, mode='weights'):
     if mode == 'weights':
-        axial_state_dict = torch.load(model_name)
+        if device == 'cpu':
+            axial_state_dict = torch.load(model_name, map_location='cpu')
+        else:
+            axial_state_dict = torch.load(model_name)
     else:
-        ckpt = torch.load(model_name)
+        if device == 'cpu':
+            ckpt = torch.load(model_name, map_location='cpu')
+        else:
+            ckpt = torch.load(model_name)
         axial_state_dict = ckpt['model_state_dict']
 
     new_axial_state_dict = OrderedDict()
