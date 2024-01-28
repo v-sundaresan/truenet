@@ -31,7 +31,7 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     assert len(sub_name_dicts) > 0, "There must be at least 1 subject for testing."
     use_cpu = eval_params['Use_CPU']
     if use_cpu is True:
-        device = torch.device("cpu")
+        device = torch.device("cpu", map_location='cpu')
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = eval_params['Nclass']
