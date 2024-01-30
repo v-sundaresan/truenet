@@ -68,8 +68,10 @@ def loading_model(model_name, model, device, mode='weights'):
             axial_state_dict = torch.load(model_name)
     else:
         if device == 'cpu':
+            print('utils:device used:' + device)
             ckpt = torch.load(model_name, map_location='cpu')
         else:
+            print('utils:device used:' + device)
             ckpt = torch.load(model_name)
         axial_state_dict = ckpt['model_state_dict']
 
