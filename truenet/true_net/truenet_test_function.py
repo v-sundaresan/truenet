@@ -32,8 +32,10 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     use_cpu = eval_params['Use_CPU']
     if use_cpu is True:
         device = torch.device("cpu")
+        print('testfunction:device used:' + device)
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print('testfunction:device used:' + device)
     nclass = eval_params['Nclass']
     num_channels = eval_params['Numchannels']
 

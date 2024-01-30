@@ -61,8 +61,10 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
 def loading_model(model_name, model, device, mode='weights'):
     if mode == 'weights':
         if device == 'cpu':
+            print('utils:device used:' + device)
             axial_state_dict = torch.load(model_name, map_location='cpu')
         else:
+            print('utils:device used:' + device)
             axial_state_dict = torch.load(model_name)
     else:
         if device == 'cpu':
