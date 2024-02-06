@@ -22,7 +22,7 @@ def select_train_val_names(data_path,val_numbers):
     :return:
     '''
     val_ids = random.choices(list(np.arange(len(data_path))),k=val_numbers)
-    train_ids = np.setdiff1d(np.arange(len(data_path)),val_ids)    
+    train_ids = np.setdiff1d(np.arange(len(data_path)),val_ids)
     data_path_train = [data_path[ind] for ind in train_ids]
     data_path_val = [data_path[ind] for ind in val_ids]
     return data_path_train,data_path_val,val_ids
@@ -40,7 +40,7 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
     model_layers_tobe_ftd = []
     for layer_id in layer_to_ft:
             model_layers_tobe_ftd.append(model_layer_names[layer_id-1])
-            
+
     for name, child in model.module.named_children():
         if name in model_layers_tobe_ftd:
             if verbose:
@@ -54,24 +54,24 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
                 print(name + ' is frozen', flush=True)
             for param in child.parameters():
                 param.requires_grad = False
-                
+
     return model
 
 
 def loading_model(model_name, model, device, mode='weights'):
     if mode == 'weights':
         if device == 'cpu':
-            print('utils:device used:' + device)
+            print('utils:device used:' + str(device))
             axial_state_dict = torch.load(model_name, map_location='cpu')
         else:
-            print('utils:device used:' + device)
+            print('utils:device used:' + str(device))
             axial_state_dict = torch.load(model_name)
     else:
         if device == 'cpu':
-            print('utils:device used:' + device)
+            print('utils:device used:' + str(device))
             ckpt = torch.load(model_name, map_location='cpu')
         else:
-            print('utils:device used:' + device)
+            print('utils:device used:' + str(device))
             ckpt = torch.load(model_name)
         axial_state_dict = ckpt['model_state_dict']
 
@@ -175,10 +175,3 @@ class EarlyStoppingModelCheckpointing:
         else:
             if self.verbose:
                 print('Validation loss increased; Exiting without saving the model ...')
-
-
-
-
-
-
-
