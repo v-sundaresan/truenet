@@ -208,7 +208,7 @@ where you should replace _/absolute/path/to/the/model/folder_ with the path to t
 
 Details of the different commands and their options are available through the command-line help
 
-Triplanar ensemble U-Net model, v1.0.1
+Triplanar ensemble U-Net model
 
 ```
 Subcommands available:
