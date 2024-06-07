@@ -116,29 +116,29 @@ There are multiple options in how truenet can be used, but a simple summary is t
 
 ### Examples
 
- - Using a pretrained model, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
+ - Using a **pretrained model**, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
 
 `mkdir DatasetA/results001`
 
 `truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
 
- - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+ - **Fine-tune an existing model** using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
 
 `mkdir DatasetA/model_finetuned`
 
 `truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
 
-  - then apply this model to a new subject:
+then apply this model to a new subject:
 
 `truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
- - Training a model from scratch using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+ - **Training a model from scratch** using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
 
 `mkdir DatasetA/model`
 
 `truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
 
- - then apply this model to a new subject:
+then apply this model to a new subject:
 
 `truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
 
