@@ -95,8 +95,6 @@ output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and ou
 
 ## Simple usage
 
-### Modes
-
 There are multiple options in how truenet can be used, but a simple summary is this:
  - to segment an image you use the _evaluate_ mode
  - this requires an existing _model_ to be used, where a model is a deep learning network (which is what is inside truenet) that has been trained on some dataset
@@ -105,17 +103,39 @@ There are multiple options in how truenet can be used, but a simple summary is t
  - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
  - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
 
-### Recommendations
+### Examples
 
-To begin with we recommend that you try one of the pretrained models that is supplied with truenet (see [below](#pretrained-models)).  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.
+ - Using a pretrained model, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
 
-Note that one reason that things might not work well is if the preprocessing fails, so make sure you check the preprocessing results before running trunet (looking at the images in _fsleyes_ is normally the best way to check if the registrations, brain extractions and bias field corrections are good or not).
+`mkdir DatasetA/results001`
 
-The simplest way to choose which pretrained model to choose is just by looking at example images from those datasets (see [WMH challenge](https://wmh.isi.uu.nl/) and [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data)) and deciding which ones look closer to yours or not.  One of the reasons that different models are needed is that images vary between different MRI sequences and scanners.  Sometimes the differences are obvious to the eye and sometimes not, and deep learning networks can sometimes be sensitive to subtle differences.  If you are not sure which is closest then pick one and try it, and then try the other one if you are not happy.
+`truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
 
-When performing a fine tuning operation it is necessary to supply your own labelled images (i.e. images and manual segmentations) and for this to work we recommend that you have at least 14 images (though you can try with less and see if you are lucky). Typically, the more you have the better your chances of it adapting well to the characteristics of your images and/or the specifics of your segmentation protocol/preferences. Normally we would recommend trying fine tuning before training from scratch (and the latter isn't needed if your fine tuning results are good) but the one exception to this is when your images are obviously very different to those in the pretrained datasets, as in this case you are unlikely to get a good result from fine tuning.
+---
 
-When performing a training from scratch, the situation is similar to that for fine tuning - you need a set of your own labelled images, but you need more in this case and we would recommend a minimum of 25 images (though again, you can try your luck with less).
+ - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+
+`mkdir DatasetA/model_finetuned`
+
+`truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
+
+  - then apply this model to a new subject:
+
+`truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
+
+---
+
+ - Training a model from scratch using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+
+`mkdir DatasetA/model`
+
+`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
+
+ - then apply this model to a new subject:
+
+`truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
+
+---
 
 ### Naming conventions
 
@@ -156,6 +176,19 @@ Names of arguments for -m for various pretrained models are given in the table b
  - mwsc models are ideal for fine-tuning on small datasets (<20 subjects) while ukbb models are better for larger ones.
 
 ---
+### Recommendations
+
+To begin with we recommend that you try one of the pretrained models that is supplied with truenet (see [below](#pretrained-models)).  If you find that this doesn't work as well as you would like then try fine tuning one of the pretrained models.  If that still doesn't work well then try training from scratch.
+
+Note that one reason that things might not work well is if the preprocessing fails, so make sure you check the preprocessing results before running trunet (looking at the images in _fsleyes_ is normally the best way to check if the registrations, brain extractions and bias field corrections are good or not).
+
+The simplest way to choose which pretrained model to choose is just by looking at example images from those datasets (see [WMH challenge](https://wmh.isi.uu.nl/) and [UK Biobank](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data)) and deciding which ones look closer to yours or not.  One of the reasons that different models are needed is that images vary between different MRI sequences and scanners.  Sometimes the differences are obvious to the eye and sometimes not, and deep learning networks can sometimes be sensitive to subtle differences.  If you are not sure which is closest then pick one and try it, and then try the other one if you are not happy.
+
+When performing a fine tuning operation it is necessary to supply your own labelled images (i.e. images and manual segmentations) and for this to work we recommend that you have at least 14 images (though you can try with less and see if you are lucky). Typically, the more you have the better your chances of it adapting well to the characteristics of your images and/or the specifics of your segmentation protocol/preferences. Normally we would recommend trying fine tuning before training from scratch (and the latter isn't needed if your fine tuning results are good) but the one exception to this is when your images are obviously very different to those in the pretrained datasets, as in this case you are unlikely to get a good result from fine tuning.
+
+When performing a training from scratch, the situation is similar to that for fine tuning - you need a set of your own labelled images, but you need more in this case and we would recommend a minimum of 25 images (though again, you can try your luck with less).
+
+---
 **_IMPORTANT NOTE:_**  
 
 Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link. These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder. Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
@@ -166,47 +199,11 @@ export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
 where you should replace _/absolute/path/to/the/model/folder_ with the path to the folder that contains the _*.pth_ files.  Then you can run truenet commands using the pretrained models as if they were integrated into FSL. The above export command needs to be done once for each terminal that you open, prior to running truenet.
 
 ---
-
-### Examples
-
- - Using a pretrained model, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
-
-`mkdir DatasetA/results001`
-
-`truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
-
 ---
 
- - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+## Advanced options 
 
-`mkdir DatasetA/model_finetuned`
-
-`truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
-
-  - then apply this model to a new subject:
-
-`truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
-
----
-
- - Training a model from scratch using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
-
-`mkdir DatasetA/model`
-
-`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
-
- - then apply this model to a new subject:
-
-`truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
-
----
----
-
-## Advanced usage
-
-### Modes of operation
-
-Details of the different commands and their options are available through the command-line help
+Details of the different commands and all their options available through the command-line help.
 
 Triplanar ensemble U-Net model
 
@@ -220,7 +217,7 @@ Subcommands available:
 
 ### Applying the TrUE-Net model (performing segmentation)
 
-#### truenet evaluate: evaluating the TrUE-Net model, v1.0.1
+#### truenet evaluate: evaluating the TrUE-Net model 
 
 ```
 Usage: truenet evaluate -i <input_directory> -m <model_directory> -o <output_directory> [options]
@@ -242,7 +239,7 @@ Optional arguments:
 
 ### Fine-tuning an existing TrUE-Net model
 
-#### truenet fine_tune: training the TrUE-Net model from scratch, v1.0.1
+#### truenet fine_tune: training the TrUE-Net model from scratch 
 <p align="center">
        <img
        src="images/fine_tuning_images.png"
@@ -293,7 +290,7 @@ Optional arguments:
 
 ### Training the TrUE-Net model from scratch
 
-#### truenet train: training the TrUE-Net model from scratch, v1.0.1
+#### truenet train: training the TrUE-Net model from scratch  
 
 ```
 Usage: truenet train -i <input_directory> -l <label_directory> -m <model_directory> [options]
@@ -334,7 +331,7 @@ Optional arguments:
 
 ### Cross-validation of TrUE-Net model
 
-#### truenet cross_validate: cross-validation of the TrUE-Net model, v1.0.1
+#### truenet cross_validate: cross-validation of the TrUE-Net model 
 
 ```
 Usage: truenet cross_validate -i <input_directory> -l <label_directory> -o <output_directory> [options]
