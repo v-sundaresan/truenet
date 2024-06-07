@@ -91,6 +91,17 @@ output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and ou
 `prepare_truenet_data FLAIR.nii.gz T1.nii.gz sub001`
 
 ---
+Triplanar ensemble U-Net model
+Modes of usage:
+
+```
+Subcommands available:
+    - truenet evaluate        Applying a saved/pretrained TrUE-Net model for testing
+    - truenet fine_tune       Fine-tuning a saved/pretrained TrUE-Net model from scratch
+    - truenet train           Training a TrUE-Net model from scratch
+    - truenet cross_validate  Leave-one-out validation of TrUE-Net model
+```
+
 ---
 
 ## Simple usage
@@ -111,8 +122,6 @@ There are multiple options in how truenet can be used, but a simple summary is t
 
 `truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
 
----
-
  - Fine-tune an existing model using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
 
 `mkdir DatasetA/model_finetuned`
@@ -122,8 +131,6 @@ There are multiple options in how truenet can be used, but a simple summary is t
   - then apply this model to a new subject:
 
 `truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
-
----
 
  - Training a model from scratch using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
 
@@ -204,16 +211,6 @@ where you should replace _/absolute/path/to/the/model/folder_ with the path to t
 ## Advanced options 
 
 Details of the different commands and all their options available through the command-line help.
-
-Triplanar ensemble U-Net model
-
-```
-Subcommands available:
-    - truenet evaluate        Applying a saved/pretrained TrUE-Net model for testing
-    - truenet fine_tune       Fine-tuning a saved/pretrained TrUE-Net model from scratch
-    - truenet train           Training a TrUE-Net model from scratch
-    - truenet cross_validate  Leave-one-out validation of TrUE-Net model
-```
 
 ### Applying the TrUE-Net model (performing segmentation)
 
