@@ -1,4 +1,4 @@
-import pkg_resources
+import importlib.metadata as impmeta
 
 #=========================================================================================
 # Truenet help, description and epilog messages to display
@@ -7,12 +7,12 @@ import pkg_resources
 #=========================================================================================
 
 def help_descs():
-    version = pkg_resources.require("truenet")[0].version
+    version = impmeta.version('truenet')
     helps = {
         'mainparser' :
-        "truenet: Triplanar ensemble U-Net model, v" + str(version) + "\n" 
-        "   \n" 
-        "Sub-commands available:\n" 
+        "truenet: Triplanar ensemble U-Net model, v" + str(version) + "\n"
+        "   \n"
+        "Sub-commands available:\n"
         "       truenet train           Training a TrUE-Net model from scratch\n"
         "       truenet evaluate        Applying a saved/pretrained TrUE-Net model for testing\n"
         "       truenet fine_tune       Fine-tuning a saved/pretrained TrUE-Net model\n"
@@ -31,7 +31,7 @@ def help_descs():
         '   \n'
         'Compulsory arguments:\n'
         '       -i, --inp_dir                       Directory containing FLAIR and T1 images for training\n'
-        '       -l, --label_dir                     Directory containing lesion manual masks\n'                                                          
+        '       -l, --label_dir                     Directory containing lesion manual masks\n'
         '       -m, --model_dir                     Directory where the training model or weights need to be saved\n'
         '   \n'
         'Optional arguments:\n'
@@ -49,11 +49,11 @@ def help_descs():
         '       -opt, --optimizer                   Optimizer used for training. Options:adam, sgd [default = adam]\n'
         '       -bs, --batch_size                   Batch size used for training [default = 8]\n'
         '       -ep, --num_epochs                   Number of epochs for training [default = 60]\n'
-        '       -eps, --epsilon                     Epsilon for adam optimiser (default=1e-4)\n'                                                                              
-        '       -mom, --momentum                    Momentum for sgd optimiser (default=0.9)\n'                                                                              
+        '       -eps, --epsilon                     Epsilon for adam optimiser (default=1e-4)\n'
+        '       -mom, --momentum                    Momentum for sgd optimiser (default=0.9)\n'
         '       -es, --early_stop_val               Number of epochs to wait for progress (early stopping) [default = 20]\n'
         '       -sv_mod, --save_full_model          Saving the whole model instead of weights alone [default = False]\n'
-        '       -sv_resume, --save_resume_training  Whether to save and resume training in case of interruptions (default-False)\n'                                                                             
+        '       -sv_resume, --save_resume_training  Whether to save and resume training in case of interruptions (default-False)\n'
         '       -cp_type, --cp_save_type            Checkpoint to be saved. Options: best, last, everyN [default = last]\n'
         '       -cp_n, --cp_everyn_N                If -cv_type=everyN, the N value [default = 10]\n'
         '       -da, --data_augmentation            Applying data augmentation [default = True]\n'
@@ -68,7 +68,7 @@ def help_descs():
         '   \n'
         'Compulsory arguments:\n'
         '       -i, --inp_dir                         Directory containing FLAIR and T1 images for testing\n'
-        '       -m, --model_dir                       Model basename with absolute path. If you want to use pretrained model, use mwsc/ukbb\n'                                                                  
+        '       -m, --model_dir                       Model basename with absolute path. If you want to use pretrained model, use mwsc/ukbb\n'
         '       -o, --output_dir                      Directory for saving output predictions\n'
         '   \n'
         'Optional arguments:\n'
@@ -88,7 +88,7 @@ def help_descs():
         '   \n'
         'Compulsory arguments:\n'
         '       -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning\n'
-        '       -l, --label_dir                       Directory containing lesion manual masks\n'                                                          
+        '       -l, --label_dir                       Directory containing lesion manual masks\n'
         '       -m, --model_dir                       Model basename with absolute path. If you want to use pretrained model, use mwsc/ukbb\n'
         '       -o, --output_dir                      Path to the directory where the fine-tuned model/weights need to be saved\n'
         '   \n'
@@ -108,9 +108,9 @@ def help_descs():
         '       -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]\n'
         '       -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]\n'
         '       -opt, --optimizer                     Optimizer used for fine-tuning. Options:adam, sgd [default = adam]\n'
-        '       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)\n'                                                                              
-        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'                                                                              
-        '       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)\n'                                                                             
+        '       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)\n'
+        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
+        '       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)\n'
         '       -bs, --batch_size                     Batch size used for fine-tuning [default = 8]\n'
         '       -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]\n'
         '       -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]\n'
@@ -123,14 +123,14 @@ def help_descs():
         '   \n',
 
     'cross_validate':
-        'truenet cross_validate: cross-validation of the TrUE-Net model, v' + str(version) + '\n'                                                                                            
+        'truenet cross_validate: cross-validation of the TrUE-Net model, v' + str(version) + '\n'
         '   \n'
         'Usage: truenet cross_validate -i <input_directory> -o <output_directory> [options]\n'
         '   \n'
         '   \n'
         'Compulsory arguments:\n'
         '       -i, --inp_dir                         Path to the directory containing FLAIR and T1 images for fine-tuning\n'
-        '       -l, --label_dir                       Directory containing lesion manual masks\n'                                                          
+        '       -l, --label_dir                       Directory containing lesion manual masks\n'
         '       -o, --output_dir                      Path to the directory for saving output predictions\n'
         '   \n'
         'Optional arguments:\n'
@@ -149,16 +149,16 @@ def help_descs():
         '       -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]\n'
         '       -opt, --optimizer                     Optimizer used for training. Options:adam, sgd [default = adam]\n'
         '       -bs, --batch_size                     Batch size used for fine-tuning [default = 8]\n'
-        '       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)\n'                                                                              
-        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'                                                                              
-        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'                                                                              
+        '       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)\n'
+        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
+        '       -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
         '       -sv, --save_checkpoint                Whether to save any checkpoint (default=False)\n'
-        '       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)\n'                                                                             
+        '       -sv_resume, --save_resume_training    Whether to save and resume training in case of interruptions (default-False)\n'
         '       -cp_type, --cp_save_type              Checkpoint to be saved. Options: best, last, everyN [default = last]\n'
         '       -cp_n, --cp_everyn_N                  If -cv_type=everyN, the N value [default = 10]\n'
         '       -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]\n'
         '       -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]\n'
-        '       -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]\n'                                                                                     
+        '       -int, --intermediate                  Saving intermediate prediction results (individual planes) for each subject [default = False]\n'
         '       -da, --data_augmentation              Applying data augmentation [default = True]\n'
         '       -af, --aug_factor                     Data inflation factor for augmentation [default = 2]\n'
         '       -v, --verbose                         Display debug messages [default = False]\n'
@@ -168,7 +168,7 @@ def help_descs():
     return helps
 
 def desc_descs():
-    version = pkg_resources.require("truenet")[0].version
+    version = impmeta.version("truenet")
     descs = {
         'mainparser' :
         "truenet: Triplanar ensemble U-Net model, v" + str(version) + "\n"
@@ -183,16 +183,16 @@ def desc_descs():
         'train':
         '   \n'
         'truenet: Triplanar ensemble U-Net model, v' + str(version) + '\n'
-        '   \n'                                                             
+        '   \n'
         'The \'train\' command trains the TrUE-Net model from scratch using the training subjects specified in\n'
         'the input directory. The FLAIR and T1 volumes should be named as \'<subj_name>_FLAIR.nii.gz\'\n'
-        'and \'<subj_name>_T1.nii.gz\' respectively\n'                                                             
+        'and \'<subj_name>_T1.nii.gz\' respectively\n'
         '   \n',
 
         'evaluate':
         '   \n'
         'truenet: Triplanar ensemble U-Net model, v' + str(version) + '\n'
-        '   \n'                                                             
+        '   \n'
         'The \'evaluate\' command is used for testing the TrUE-Net model on the test subjects specified in\n'
         'the input directory. The FLAIR and T1 volumes should be named as \'<subj_name>_FLAIR.nii.gz\' and\n'
         '\'<subj_name>_T1.nii.gz\'respectively\n'
@@ -234,4 +234,3 @@ def epilog_descs():
         "   \n",
     }
     return epilogs
-
