@@ -1,7 +1,7 @@
 #!/usr/bin/env fslpython
 import argparse
 import sys
-import pkg_resources
+import importlib.metadata as impmeta
 import codecs
 from truenet.true_net import (truenet_commands, truenet_help_messages)
 
@@ -164,6 +164,3 @@ if __name__ == "__main__":
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
-
-
-
