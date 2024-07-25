@@ -43,7 +43,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     pretrained = ft_params['Pretrained']
     model_name = ft_params['Modelname']
 
-    if pretrained == 1:
+    if pretrained:
         nclass = 2
         model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
         model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='sagittal')
@@ -153,14 +153,14 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     print('Axial model: ', str(sum([p.numel() for p in model_axial.parameters()])), flush=True)
     print('Sagittal model: ', str(sum([p.numel() for p in model_sagittal.parameters()])), flush=True)
     print('Coronal model: ', str(sum([p.numel() for p in model_coronal.parameters()])), flush=True)
-    
+
     model_axial = truenet_utils.freeze_layer_for_finetuning(model_axial, layers_to_ft, verbose=verbose)
     model_sagittal = truenet_utils.freeze_layer_for_finetuning(model_sagittal, layers_to_ft, verbose=verbose)
     model_coronal = truenet_utils.freeze_layer_for_finetuning(model_coronal, layers_to_ft, verbose=verbose)
     model_axial.to(device=device)
     model_sagittal.to(device=device)
     model_coronal.to(device=device)
-    
+
     print('Total number of trainable parameters', flush=True)
     model_parameters = filter(lambda p: p.requires_grad, model_axial.parameters())
     params = sum([p.numel() for p in model_parameters])
@@ -171,7 +171,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     model_parameters = filter(lambda p: p.requires_grad, model_coronal.parameters())
     params = sum([p.numel() for p in model_parameters])
     print('Coronal model: ', str(params), flush=True)
-    
+
     if optim_type == 'adam':
         epsilon = ft_params['Epsilon']
         optimizer_axial = optim.Adam(filter(lambda p: p.requires_grad,
@@ -190,12 +190,12 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                                              model_coronal.parameters()), lr=ft_lrt, momentum=moment)
     else:
         raise ValueError("Invalid optimiser choice provided! Valid options: 'adam', 'sgd'")
-        
+
     if nclass == 2:
         criterion = truenet_loss_functions.CombinedLoss()
     else:
         criterion = truenet_loss_functions.CombinedMultiLoss(nclasses=nclass)
-    
+
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
 
@@ -210,7 +210,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                                                   augment=aug, weighted=weighted, save_checkpoint=save_cp,
                                                   save_weights=save_wei, save_case=save_case, verbose=verbose,
                                                   dir_checkpoint=dir_cp)
-        
+
     if req_plane == 'all' or req_plane == 'sagittal':
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer_sagittal, milestones, gamma=gamma, last_epoch=-1)
         model_sagittal = truenet_train.train_truenet(train_name_dicts, val_name_dicts, model_sagittal, criterion,
@@ -218,7 +218,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                                                      augment=aug, weighted=weighted, save_checkpoint=save_cp,
                                                      save_weights=save_wei, save_case=save_case, verbose=verbose,
                                                      dir_checkpoint=dir_cp)
-        
+
     if req_plane == 'all' or req_plane == 'coronal':
         scheduler = optim.lr_scheduler.MultiStepLR(optimizer_coronal, milestones, gamma=gamma, last_epoch=-1)
         model_coronal = truenet_train.train_truenet(train_name_dicts, val_name_dicts, model_coronal, criterion,
@@ -228,6 +228,3 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                                                     dir_checkpoint=dir_cp)
 
     print('Model Fine-tuning done!', flush=True)
-
-
-
