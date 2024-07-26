@@ -39,7 +39,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
         device = torch.device("cpu")
 
     nclass = ft_params['Nclass']
-    numchannels = ft_params['Num_channels']
+    numchannels = ft_params['Numchannels']
     pretrained = ft_params['Pretrained']
     model_name = ft_params['Modelname']
 
@@ -56,13 +56,13 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
         model_sagittal = nn.DataParallel(model_sagittal)
         model_coronal = nn.DataParallel(model_coronal)
         model_path = os.path.join(model_dir, model_name + '_axial.pth')
-        model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+        model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
         model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
         model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-        model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+        model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
     else:
         try:
             model_path = os.path.join(model_dir, model_name + '_axial.pth')
@@ -75,19 +75,19 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
             model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
             model_axial.to(device=device)
             model_axial = nn.DataParallel(model_axial)
-            model_axial = truenet_utils.loading_model(model_path, model_axial)
+            model_axial = truenet_utils.loading_model(model_path, model_axial, device)
 
             model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='sagittal')
             model_sagittal.to(device=device)
             model_sagittal = nn.DataParallel(model_sagittal)
             model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal)
+            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device)
 
             model_coronal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='coronal')
             model_coronal.to(device=device)
             model_coronal = nn.DataParallel(model_coronal)
             model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal)
+            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device)
         except:
             try:
                 model_path = os.path.join(model_dir, model_name + '_axial.pth')
@@ -100,20 +100,20 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
                 model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
                 model_axial.to(device=device)
                 model_axial = nn.DataParallel(model_axial)
-                model_axial = truenet_utils.loading_model(model_path, model_axial, mode='full_model')
+                model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
 
                 model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
                 model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64,
                                                        plane='sagittal')
                 model_sagittal.to(device=device)
                 model_sagittal = nn.DataParallel(model_sagittal)
-                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, mode='full_model')
+                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
 
                 model_path = os.path.join(model_dir, model_name + '_coronal.pth')
                 model_coronal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='coronal')
                 model_coronal.to(device=device)
                 model_coronal = nn.DataParallel(model_coronal)
-                model_coronal = truenet_utils.loading_model(model_path, model_coronal, mode='full_model')
+                model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
             except ImportError:
                 raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
                                   model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
