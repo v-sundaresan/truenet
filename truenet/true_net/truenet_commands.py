@@ -683,7 +683,8 @@ def fine_tune(args):
                          'Pretrained': pretrained,
                          'Modelname': model_name,
                          'SaveResume': args.save_resume_training,
-                         'Numchannels': num_channels
+                         'Numchannels': num_channels,
+                         'Use_CPU': args.use_cpu,
                          }
 
     if args.cp_save_type not in ['best', 'last', 'everyN']:
@@ -935,4 +936,3 @@ def cross_validate(args):
                                 intermediate=args.intermediate, save_cp=args.save_checkpoint, save_wei=save_wei,
                                 save_case=args.cp_save_type, verbose=args.verbose, dir_cp=out_dir,
                                 output_dir=out_dir)
-

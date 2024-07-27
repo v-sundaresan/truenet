@@ -95,10 +95,10 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
 
         if fld == (fold - 1):
             test_ids = np.arange(fld * test_subs_per_fold, len(sub_name_dicts))
-            test_sub_dicts = sub_name_dicts[test_ids]
+            test_sub_dicts = [sub_name_dicts[i] for i in test_ids]
         else:
             test_ids = np.arange(fld * test_subs_per_fold, (fld+1) * test_subs_per_fold)
-            test_sub_dicts = sub_name_dicts[test_ids]
+            test_sub_dicts = [sub_name_dicts[i] for i in test_ids]
 
         rem_sub_ids = np.setdiff1d(np.arange(len(sub_name_dicts)),test_ids)
         rem_sub_name_dicts = [sub_name_dicts[idx] for idx in rem_sub_ids]
