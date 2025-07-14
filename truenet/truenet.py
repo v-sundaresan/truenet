@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import argparse
+import os.path as op
 import sys
+
 from truenet.true_net import (truenet_commands, truenet_help_messages)
 
 #=========================================================================================
@@ -148,8 +150,78 @@ def main():
     optionalNamedcv.add_argument('-v', '--verbose', type = bool, default=False, help='Display debug messages (default=False)')
     parser_cv.set_defaults(func=truenet_commands.cross_validate)
 
-
     args = parser.parse_args()
+
+    if not op.isdir(args.inp_dir):
+        raise ValueError(f'{args.inp_dir} does not appear to be a valid input directory')
+    if hasattr(args, 'model_dir') and not op.isdir(args.model_dir):
+        raise ValueError(f'{args.model_dir} does not appear to be a valid directory')
+    if hasattr(args, 'label_dir') and not op.isdir(args.label_dir):
+        raise ValueError(f'{args.label_dir} does not appear to be a valid directory')
+    if hasattr(args, 'output_dir') and not op.isdir(args.output_dir):
+        raise ValueError(f'{args.output_dir} does not appear to be a valid directory')
+
+    if getattr(args, 'loss_function', None) == 'weighted':
+        if args.gmdist_dir is None:
+            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
+        if not op.isdir(args.gmdist_dir):
+            raise ValueError(f'{args.gmdist_dir} does not appear to be a valid GM distance files directory')
+        if args.ventdist_dir is None:
+            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
+        if not op.isdir(args.ventdist_dir):
+            raise ValueError(f'{args.ventdist_dir} does not appear to be a valid ventricle distance files directory')
+
+    if hasattr(args, 'init_learng_rate') and not (0 <= args.init_learng_rate <= 1):
+        raise ValueError('Initial learning rate must be between 0 and 1')
+
+    if hasattr(args, 'optimizer') and args.optimizer not in ['adam', 'sgd']:
+        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
+
+    if hasattr(args, 'acq_plane') and args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
+        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
+
+    if hasattr(args, 'lr_sch_gamma') and not (0 <= args.lr_sch_gamma <= 1):
+        raise ValueError('Learning rate reduction factor must be between 0 and 1')
+
+    if hasattr(args, 'train_prop') and not (0 <= args.train_prop <= 1):
+        raise ValueError('Training data proportion must be between 0 and 1')
+
+    if hasattr(args, 'batch_size') and args.batch_size < 1:
+        raise ValueError('Batch size must be an int and > 1')
+    if hasattr(args, 'num_epochs') and args.num_epochs < 1:
+        raise ValueError('Number of epochs must be an int and > 1')
+    if hasattr(args, 'batch_factor') and args.batch_factor < 1:
+        raise ValueError('Batch factor must be an int and > 1')
+
+    if hasattr(args, 'early_stop_val') and not (1 <= args.early_stop_val <= args.num_epochs):
+        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
+    if hasattr(args, 'aug_factor') and args.aug_factor < 1:
+        raise ValueError('Augmentation factor must be an int and > 1')
+
+    if hasattr(args, 'cp_save_type') and (args.cp_save_type not in ['best', 'last', 'everyN']):
+        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
+
+    if hasattr(args, 'cp_save_type') and args.cp_save_type == 'everyN':
+        if not (1 <= args.cp_everyn_N <= args.num_epochs):
+            raise ValueError(
+                'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
+
+    if (args.cp_load_type not in ['best', 'last', 'specific']):
+        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, specific')
+
+    if hasattr(args, 'cp_load_type') and (args.cp_load_type == 'specific'):
+        args.cp_load_type = 'everyN'
+        if args.cp_everyn_N is None:
+            raise ValueError('-cp_n must be provided to specify the epoch when using -cp_type is "specific"!')
+
+    if hasattr(args, 'num_classes') and args.num_classes < 1:
+        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
+
+    if hasattr(args, 'cv_fold') and args.cv_fold < 1:
+        raise ValueError('Number of folds cannot be 0 or negative')
+
+    if hasattr(args, 'resume_from_fold') and args.resume_from_fold < 1:
+        raise ValueError('Fold to resume cannot be 0 or negative')
 
     if args.command == 'train':
         truenet_commands.train(args)

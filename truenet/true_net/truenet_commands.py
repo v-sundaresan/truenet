@@ -25,9 +25,6 @@ def train(args):
     # Do basic sanity checks and assign variable names
     inp_dir = args.inp_dir
 
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
-
     flairflag = 0
     t1flag = 0
 
@@ -49,27 +46,13 @@ def train(args):
         input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
                          glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
-    if os.path.isdir(args.model_dir) is False:
-        raise ValueError(args.model_dir + ' does not appear to be a valid directory')
     model_dir = args.model_dir
 
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
     label_dir = args.label_dir
 
     if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
         gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
         ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
     else:
         gmdist_dir = None
         ventdist_dir = None
@@ -156,48 +139,6 @@ def train(args):
         if t1_count > 0:
             num_channels = 1
 
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-            raise ValueError(
-                'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
-
     # Create the training parameters dictionary
     training_params = {'Learning_rate': args.init_learng_rate,
                        'Optimizer': args.optimizer,
@@ -218,13 +159,7 @@ def train(args):
                        'Numchannels': num_channels
                        }
 
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
+    save_wei = not args.save_full_model
 
     # Training main function call
     models = truenet_train_function.main(subj_name_dicts, training_params, aug=args.data_augmentation, weighted=weighted,
@@ -242,9 +177,6 @@ def evaluate(args):
     # Do basic sanity checks and assign variable names
     inp_dir = args.inp_dir
     out_dir = args.output_dir
-
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
     flairflag = 0
     t1flag = 0
@@ -266,9 +198,6 @@ def evaluate(args):
     else:
         input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
                       glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-
-    if os.path.isdir(out_dir) is False:
-        raise ValueError(out_dir + ' does not appear to be a valid directory')
 
     # Create a list of dictionaries containing required filepaths for the test subjects
     subj_name_dicts = []
@@ -322,9 +251,6 @@ def evaluate(args):
     else:
         if t1_count > 0:
             num_channels = 1
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
     if args.model_name == 'mwsc_flair':
         pretrained = True
@@ -397,14 +323,6 @@ def evaluate(args):
                    'Use_CPU': args.use_cpu
                    }
 
-    if args.cp_load_type not in ['best', 'last', 'specific']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, specific')
-
-    if args.cp_load_type == 'specific':
-        args.cp_load_type = 'everyN'
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch when using -cp_type is "specific"!')
-
     # Test main function call
     truenet_test_function.main(subj_name_dicts, eval_params, intermediate=args.intermediate,
                                model_dir=model_dir, load_case=args.cp_load_type, output_dir=out_dir,
@@ -421,9 +339,6 @@ def fine_tune(args):
     '''
     # Do the usual sanity checks
     inp_dir = args.inp_dir
-
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
     flairflag = 0
     t1flag = 0
@@ -446,27 +361,13 @@ def fine_tune(args):
         input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
                       glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
-    if os.path.isdir(args.output_dir) is False:
-        raise ValueError(args.output_dir + ' does not appear to be a valid directory')
     out_dir = args.output_dir
 
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
     label_dir = args.label_dir
 
     if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
         gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
         ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
     else:
         gmdist_dir = None
         ventdist_dir = None
@@ -551,48 +452,6 @@ def fine_tune(args):
     else:
         if t1_count > 0:
             num_channels = 1
-
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-            raise ValueError(
-                'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
 
     if args.save_full_model == 'True':
         save_wei = False
@@ -687,13 +546,6 @@ def fine_tune(args):
                          'Use_CPU': args.use_cpu,
                          }
 
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
-
     # Fine-tuning main function call
     truenet_finetune.main(subj_name_dicts, finetuning_params, aug=args.data_augmentation, weighted=weighted,
                           save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose,
@@ -709,9 +561,6 @@ def cross_validate(args):
     '''
     # Usual sanity check for checking if filepaths and files exist.
     inp_dir = args.inp_dir
-
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
 
     flairflag = 0
     t1flag = 0
@@ -734,36 +583,12 @@ def cross_validate(args):
         input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
                       glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
 
-    if os.path.isdir(args.output_dir) is False:
-        raise ValueError(args.output_dir + ' does not appear to be a valid directory')
     out_dir = args.output_dir
-
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
     label_dir = args.label_dir
 
-    # if os.path.isdir(model_dir) is False:
-    #     raise ValueError(model_dir + ' does not appear to be a valid directory')
-
-    if args.cv_fold < 1:
-        raise ValueError('Number of folds cannot be 0 or negative')
-
-    if args.resume_from_fold < 1:
-        raise ValueError('Fold to resume cannot be 0 or negative')
-
     if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
         gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
         ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
     else:
         gmdist_dir = None
         ventdist_dir = None
@@ -849,48 +674,6 @@ def cross_validate(args):
         if t1_count > 0:
             num_channels = 1
 
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-    # if args.cp_save_type == 'everyN':
-    #     if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-    #         raise ValueError(
-    #             'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
-
     if len(subj_name_dicts) < args.cv_fold:
         raise ValueError('Number of folds is greater than number of subjects!')
 
@@ -919,17 +702,7 @@ def cross_validate(args):
                  'Numchannels': num_channels
                  }
 
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
+    save_wei = not args.save_full_model
 
     # Cross-validation main function call
     truenet_cross_validate.main(subj_name_dicts, cv_params, aug=args.data_augmentation, weighted=weighted,
