@@ -11,6 +11,7 @@ authors      = [{name = "Vaanathi Sundaresan"}]
 license      = { file="LICENSE" }
 
 dependencies = [
+  "fslpy",
   "nibabel",
   "scipy",
   "torch",
