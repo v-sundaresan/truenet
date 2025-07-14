@@ -1,0 +1,33 @@
+[build-system]
+requires      = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name         = "truenet"
+dynamic      = ["version"]
+description  = "DL method for WMH segmentation"
+readme       = {file = "README.md", content-type="text/markdown"}
+authors      = [{name = "Vaanathi Sundaresan"}]
+license      = { file="LICENSE" }
+
+dependencies = [
+  "nibabel",
+  "scipy",
+  "torch",
+  "numpy",
+  "scikit-image"
+]
+
+[project.scripts]
+truenet = "truenet.truenet:main"
+
+[tool.setuptools.packages.find]
+include = ["truenet"]
+
+# Shell scripts
+[tool.setuptools.script-files]
+prepare_truenet_data = "truenet/scripts/prepare_truenet_data"
+make_WMmask_flair    = "truenet/scripts/make_WMmask_flair"
+
+# automatic version number from git tag
+[tool.setuptools_scm]

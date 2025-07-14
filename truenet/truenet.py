@@ -1,8 +1,7 @@
-#!/usr/bin/env fslpython
+#!/usr/bin/env python
+
 import argparse
 import sys
-import importlib.metadata as impmeta
-import codecs
 from truenet.true_net import (truenet_commands, truenet_help_messages)
 
 #=========================================================================================
@@ -10,7 +9,7 @@ from truenet.true_net import (truenet_commands, truenet_help_messages)
 # Vaanathi Sundaresan
 # 01-04-2021, Oxford
 #=========================================================================================
-if __name__ == "__main__":
+def main():
     desc_msgs = truenet_help_messages.desc_descs()
     epilog_msgs = truenet_help_messages.epilog_descs()
     parser = argparse.ArgumentParser(prog='truenet', formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -166,3 +165,6 @@ if __name__ == "__main__":
     else:
         parser.parse_args(["--help"])
         sys.exit(0)
+
+if __name__ == "__main__":
+    main()
