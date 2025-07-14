@@ -58,7 +58,7 @@ def main():
                                                                                            'if you want to use pretrained model, use mwsc/ukbb')
     requiredNamedevaluate.add_argument('-o', '--output_dir', type=str, required=True, help='Directory for saving predictions')
     optionalNamedevaluate = parser_evaluate.add_argument_group('Optional named arguments')
-    optionalNamedevaluate.add_argument('-cpu', '--use_cpu', type=bool, required=False, default=False,
+    optionalNamedevaluate.add_argument('-cpu', '--use_cpu', action='store_true',
                                     help='Force the model to evaluate the model on CPU True/False (default=False)')
     # optionalNamedevaluate.add_argument('-p', '--pretrained_model', type=bool, required=False, default=False, help='Whether to use a standard pre-trained model (default=False)')
     # optionalNamedevaluate.add_argument('-pmodel', '--pretrained_model_name', type=str, required=False, default='mwsc', help='Pre-trained model to be used: mwsc, ukbb (default = mwsc)')
@@ -108,8 +108,8 @@ def main():
     optionalNamedft.add_argument('-cp_type', '--cp_save_type', type = str, required=False, default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalNamedft.add_argument('-cp_n', '--cp_everyn_N', type = int, required=False, default=10, help='If -cp_type=everyN, the N value')
     optionalNamedft.add_argument('-v', '--verbose', type = bool, required=False, default=False, help='Display debug messages (default=False)')
-    optionalNamedft.add_argument('-cpu', '--use_cpu', type=bool, required=False, default=False,
-                                       help='Perform model fine-tuning on CPU True/False (default=False)')
+    optionalNamedft.add_argument('-cpu', '--use_cpu', action='store_true',
+                                    help='Perform model fine-tuning on CPU True/False (default=False)')
     parser_finetune.set_defaults(func=truenet_commands.fine_tune)
 
 
