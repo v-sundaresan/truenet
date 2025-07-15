@@ -123,6 +123,7 @@ def main():
 
     requiredEvaluate.add_argument('-i', '--inp_dir', required=True, help='Input directory containing test images')
     requiredEvaluate.add_argument('-m', '--model_name', required=True, help='Pretrained model name or model file basename')
+    requiredEvaluate.add_argument('-o', '--output_dir', required=True, help='Directory for saving predictions')
 
     optionalEvaluate.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model evaluation on CPU True/False (default=False)')
     optionalEvaluate.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate predictionss (individual planes) for each subject (default=False)')

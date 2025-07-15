@@ -62,13 +62,12 @@ def gather_inputs(args, training):
             print('FLAIR image found for ' + basename, flush=True)
             if imtest(f'{basepath}_T1'):
                 t1_path_name = addExt(f'{basepath}_T1')
-                print('T1 image not found for ' + basename + ', continuing...', flush=True)
+                print('T1 image found for ' + basename, flush=True)
         else:
             t1_path_name = addExt(input_paths[l])
             basepath     = input_paths[l].removesuffix("_T1")
             basename     = op.basename(basepath)
             print('T1 image found for ' + basename, flush=True)
-            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
 
         if training:
             if imtest(f'{label_dir}/{basename}_manualmask'):
