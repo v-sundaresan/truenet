@@ -71,7 +71,7 @@ def main():
     parser_evaluate = subparsers.add_parser(
         'evaluate',
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        help='Applying a saved/pretrained TrUE-Net model for testing',
+        help='Applying a saved/pretrained TrUE-Net model',
         description=DESCRIPTIONS['evaluate'],
         epilog=EPILOGS['subparsers'])
     parser_finetune = subparsers.add_parser(
@@ -101,9 +101,9 @@ def main():
     optionalTrain.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
     optionalTrain.add_argument('-nclass', '--num_classes', type = int, default=2, help='No of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
     optionalTrain.add_argument('-plane', '--acq_plane', default='all', help='Options: axial, sagittal, coronal, all (default = all)')
-    optionalTrain.add_argument('-da', '--data_augmentation', type = bool, default=True, help='Applying data augmentation (default=True)')
+    optionalTrain.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalTrain.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
-    optionalTrain.add_argument('-sv_resume', '--save_resume_training', type = bool, default=False, help='Whether to save and resume training in case of interruptions (default-False)')
+    optionalTrain.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalTrain.add_argument('-ilr', '--init_learng_rate', type = float, default=0.001, help='Initial LR to use in scheduler (default=0.001)')
     optionalTrain.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalTrain.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
@@ -113,33 +113,31 @@ def main():
     optionalTrain.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
     optionalTrain.add_argument('-ep', '--num_epochs', type = int, default=60, help='Number of epochs (default=60)')
     optionalTrain.add_argument('-es', '--early_stop_val', type = int, default=20, help='No. of epochs to wait for progress (early stopping) (default=20)')
-    optionalTrain.add_argument('-sv_mod', '--save_full_model', type = bool, default=False, help='Saving the whole model instead of weights alone (default=False)')
+    optionalTrain.add_argument('-sv_mod', '--save_full_model', action='store_true', help='Saving the whole model instead of weights alone (default=False)')
     optionalTrain.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalTrain.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value (default=10)')
-    optionalTrain.add_argument('-v', '--verbose', type = bool, default=False, help='Display debug messages (default=False)')
+    optionalTrain.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     requiredEvaluate = parser_evaluate.add_argument_group('Required arguments')
     optionalEvaluate = parser_evaluate.add_argument_group('Optional arguments')
 
     requiredEvaluate.add_argument('-i', '--inp_dir', required=True, help='Input directory containing test images')
-    requiredEvaluate.add_argument('-m', '--model_name', required=True, help='Model basename with absolute path if you want to use pretrained model, use mwsc/ukbb')
+    requiredEvaluate.add_argument('-m', '--model_name', required=True, help='Pretrained model name or model file basename')
 
-    optionalEvaluate.add_argument('-cpu', '--use_cpu', action='store_true', help='Force the model to evaluate the model on CPU True/False (default=False)')
-    optionalEvaluate.add_argument('-int', '--intermediate', type=bool, default=False, help='Saving intermediate predictionss (individual planes) for each subject (default=False)')
+    optionalEvaluate.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model evaluation on CPU True/False (default=False)')
+    optionalEvaluate.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate predictionss (individual planes) for each subject (default=False)')
     optionalEvaluate.add_argument('-cp_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default = last)')
     optionalEvaluate.add_argument('-cp_n', '--cp_everyn_N', type = int, default=None, help='If -cp_type=specific, the N value (default=10)')
-    optionalEvaluate.add_argument('-v', '--verbose', type = bool, default=False, help='Display debug messages (default=False)')
+    optionalEvaluate.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     requiredFt = parser_finetune.add_argument_group('Required arguments')
     optionalFt = parser_finetune.add_argument_group('Optional arguments')
 
     requiredFt.add_argument('-i', '--inp_dir', required=True, help='Input directory containing training images')
     requiredFt.add_argument('-l', '--label_dir', required=True, help='Directory containing lesion manual masks')
-    requiredFt.add_argument('-m', '--model_name', required=True, help='Model basename with absolute path (will not be considered if optional argument -p=True)')
+    requiredFt.add_argument('-m', '--model_name', required=True, help='Pretrained model name or model file basename')
     requiredFt.add_argument('-o', '--output_dir', required=True, help='Output directory for saving fine-tuned models/weights')
 
-    optionalFt.add_argument('-p', '--pretrained_model', type=bool, default=False, help='Whether to use a standard pre-trained model (default=False)')
-    optionalFt.add_argument('-pmodel', '--pretrained_model_name', default='mwsc', help='Pre-trained model to be used: mwsc, ukbb (default=mwsc')
     optionalFt.add_argument('-cpld_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default=last')
     optionalFt.add_argument('-cpld_n', '--cpload_everyn_N', type = int, default=10, help='If -cpld_type=specific, the N value (default=10)')
     optionalFt.add_argument('-ftlayers', '--ft_layers', nargs='+', type=int, default=2, help='Layers to fine-tune starting from the decoder (default=1 2)')
@@ -149,9 +147,9 @@ def main():
     optionalFt.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images. Required if -loss=weighted')
     optionalFt.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
     optionalFt.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be fine-tuned. Options: axial, sagittal, coronal, all (default=all)')
-    optionalFt.add_argument('-da', '--data_augmentation', type = bool, default=True, help='Applying data augmentation (default=True)')
+    optionalFt.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalFt.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
-    optionalFt.add_argument('-sv_resume', '--save_resume_training', type = bool, default=False, help='Whether to save and resume training in case of interruptions (default-False)')
+    optionalFt.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalFt.add_argument('-ilr', '--init_learng_rate', type = float, default=0.0001, help='Initial LR to use for fine-tuning in scheduler (default=0.0001)')
     optionalFt.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalFt.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
@@ -161,10 +159,10 @@ def main():
     optionalFt.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
     optionalFt.add_argument('-ep', '--num_epochs', type = int, default=60, help='Number of epochs (default=60)')
     optionalFt.add_argument('-es', '--early_stop_val', type = int, default=20, help='No. of epochs to wait for progress (early stopping) (default=20)')
-    optionalFt.add_argument('-sv_mod', '--save_full_model', type = bool, default=False, help='Saving the whole model instead of weights alone (default=False)')
+    optionalFt.add_argument('-sv_mod', '--save_full_model', action='store_true', help='Saving the whole model instead of weights alone (default=False)')
     optionalFt.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalFt.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
-    optionalFt.add_argument('-v', '--verbose', type = bool, default=False, help='Display debug messages (default=False)')
+    optionalFt.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
     optionalFt.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model fine-tuning on CPU True/False (default=False)')
 
     requiredCv = parser_cv.add_argument_group('Required arguments')
@@ -183,9 +181,9 @@ def main():
     optionalCv.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
     optionalCv.add_argument('-nclass', '--num_classes', type = int, default=2, help='No. of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
     optionalCv.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all (default=all)')
-    optionalCv.add_argument('-da', '--data_augmentation', type = bool, default=True, help='Applying data augmentation (default=True)')
+    optionalCv.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalCv.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
-    optionalCv.add_argument('-sv_resume', '--save_resume_training', type = bool, default=False, help='Whether to save and resume training in case of interruptions (default-False)')
+    optionalCv.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalCv.add_argument('-ilr', '--init_learng_rate', type = float, default=0.001, help='Initial LR to use in scheduler (default=0.001)')
     optionalCv.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalCv.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
@@ -195,12 +193,12 @@ def main():
     optionalCv.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
     optionalCv.add_argument('-ep', '--num_epochs', type = int, default=60, help='Number of epochs (default=60)')
     optionalCv.add_argument('-es', '--early_stop_val', type = int, default=20, help='No. of epochs to wait for progress (early stopping) (default=20)')
-    optionalCv.add_argument('-int', '--intermediate', type=bool, default=False, help='Saving intermediate prediction results for each subject (default=False)')
-    optionalCv.add_argument('-sv', '--save_checkpoint', type = bool, default=False, help='Whether to save any checkpoint (default=False)')
-    optionalCv.add_argument('-sv_mod', '--save_full_model', type = bool, default=False, help='If -sv=True, whether to save the whole model or just weights (default=False, i.e. to save just weights); if -sv=False, nothing will be saved')
+    optionalCv.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate prediction results for each subject (default=False)')
+    optionalCv.add_argument('-sv', '--save_checkpoint', action='store_true', help='Whether to save any checkpoint (default=False)')
+    optionalCv.add_argument('-sv_mod', '--save_full_model', action='store_true', help='If -sv=True, whether to save the whole model or just weights (default=False, i.e. to save just weights); if -sv=False, nothing will be saved')
     optionalCv.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalCv.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
-    optionalCv.add_argument('-v', '--verbose', type = bool, default=False, help='Display debug messages (default=False)')
+    optionalCv.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     args = parser.parse_args()
 
