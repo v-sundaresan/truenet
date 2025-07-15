@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,7 +20,7 @@ class SingleConv(nn.Module):
             OrderedDict([(
                 name+"conv", nn.Conv2d(in_channels, mid_channels, kernel_size=kernelsize, padding=1)),
                 (name+"bn", nn.BatchNorm2d(mid_channels)),
-                (name+"relu", nn.ReLU(inplace=True)),])        
+                (name+"relu", nn.ReLU(inplace=True)),])
         )
 
     def forward(self, x):
@@ -115,4 +111,3 @@ class OutConv(nn.Module):
 
     def forward(self, x):
         return self.conv(x)
-    

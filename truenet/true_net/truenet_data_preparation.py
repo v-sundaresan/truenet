@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 from truenet.true_net import (truenet_augmentation, truenet_data_preprocessing)
 from skimage.transform import resize
@@ -27,7 +23,7 @@ def create_data_array(names, is_weighted=True, plane='axial'):
     GM_distance = np.array([])
     ventdistmap = np.array([])
 
-    for i in range(len(names)): 
+    for i in range(len(names)):
         array_loaded = load_and_crop_data(names[i], weighted=is_weighted)
         data_sub1 = array_loaded['data_cropped']
         data_t1_sub1 = array_loaded['data_t1_cropped']
@@ -190,8 +186,8 @@ def load_and_crop_data(data_path, weighted=True):
         GM_distance_sub1[:GM_distance_sub_piece.shape[0],:GM_distance_sub_piece.shape[1],:GM_distance_sub_piece.shape[2]] = GM_distance_sub_piece
         ventdistmap_sub1[:ventdistmap_sub_piece.shape[0],:ventdistmap_sub_piece.shape[1],:ventdistmap_sub_piece.shape[2]] = ventdistmap_sub_piece
         loaded_array['gmdist_cropped'] = GM_distance_sub1
-        loaded_array['ventdist_cropped'] = ventdistmap_sub1   
-    
+        loaded_array['ventdist_cropped'] = ventdistmap_sub1
+
     return loaded_array
 
 
@@ -222,7 +218,7 @@ def get_slices_from_data_with_aug(loaded_data_array, af=2, plane='axial', test=0
         ventdistmap = loaded_data_array['ventdist']
         gm_distance = 10*GM_distance**0.33
         ventdistmap = 6*(ventdistmap**.5)
-                        
+
         if test == 0:
             data, data_t1, labels, GM_distance, ventdistmap = perform_augmentation_withdistmaps(data, data_t1,
                                                                                                     labels, gm_distance,
@@ -378,7 +374,7 @@ def create_test_data_array(names, plane='axial'):
     data = np.array([])
     data_t1 = np.array([])
 
-    for i in range(len(names)):  
+    for i in range(len(names)):
         array_loaded = load_and_crop_test_data(names[i])
         data_sub1 = array_loaded['data_cropped']
         data_t1_sub1 = array_loaded['data_t1_cropped']
@@ -502,4 +498,3 @@ def load_and_crop_test_data(data_path):
             :data_t1_sub_piece.shape[2]] = data_t1_sub_piece
             loaded_array['data_t1_cropped'] = data_t1_sub1
     return loaded_array
-

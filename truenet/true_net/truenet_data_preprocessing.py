@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 
 #=========================================================================================
@@ -26,7 +22,7 @@ def preprocess_data_gauss(data):
     '''
     brain1 = data > 0
     brain = brain1 > 0
-    data = data - np.mean(data[brain])      
+    data = data - np.mean(data[brain])
     den = np.std(data[brain])
     if den == 0:
         den = 1
@@ -59,4 +55,3 @@ def tight_crop_data(img_data):
     csid, ceid, clen = cut_zeros1d(col_sum)
     ssid, seid, slen = cut_zeros1d(stack_sum)
     return img_data[rsid:rsid+rlen, csid:csid+clen, ssid:ssid+slen], [rsid, rlen, csid, clen, ssid, slen]
-
