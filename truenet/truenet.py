@@ -125,7 +125,6 @@ def main():
     requiredEvaluate.add_argument('-m', '--model_name', required=True, help='Model basename with absolute path if you want to use pretrained model, use mwsc/ukbb')
 
     optionalEvaluate.add_argument('-cpu', '--use_cpu', action='store_true', help='Force the model to evaluate the model on CPU True/False (default=False)')
-    optionalEvaluate.add_argument('-nclass', '--num_classes', type = int, default=2, help='Number of classes in the labels used for training the model (for both pretrained models, -nclass=2) (default=2)')
     optionalEvaluate.add_argument('-int', '--intermediate', type=bool, default=False, help='Saving intermediate predictionss (individual planes) for each subject (default=False)')
     optionalEvaluate.add_argument('-cp_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default = last)')
     optionalEvaluate.add_argument('-cp_n', '--cp_everyn_N', type = int, default=None, help='If -cp_type=specific, the N value (default=10)')

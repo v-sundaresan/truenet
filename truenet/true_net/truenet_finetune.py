@@ -42,7 +42,7 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     # peek at one of the model files to identify
     # expected number of input channels and output
     # classes
-    model_path         = op.join(model_dir, model_name + '_axial.pth')
+    model_path          = op.join(model_dir, model_name + '_axial.pth')
     nclasses, nchannels = truenet_utils.peek_model(model_path)
 
     if nchannels != input_channels:

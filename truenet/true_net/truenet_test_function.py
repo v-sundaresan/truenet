@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import os
 import nibabel as nib
 from truenet.true_net import (truenet_model, truenet_evaluate, truenet_data_postprocessing)
 from truenet.utils import truenet_utils
+
 
 #=========================================================================================
 # Truenet main test function
@@ -25,54 +25,38 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     :param verbose: bool, display debug messages
     '''
     assert len(sub_name_dicts) > 0, "There must be at least 1 subject for testing."
-    use_cpu = eval_params['Use_CPU']
-    if use_cpu is True:
+
+    if eval_params['Use_CPU']:
         device = torch.device("cpu")
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    nclass = eval_params['Nclass']
-    num_channels = eval_params['Numchannels']
 
-    model_axial = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='axial')
-    model_sagittal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64,
-                                           plane='sagittal')
-    model_coronal = truenet_model.TrUENet(n_channels=num_channels, n_classes=nclass, init_channels=64, plane='coronal')
+    # number of channels (T1/FLAIR) present in input
+    input_channels = eval_params['Numchannels']
+    model_name     = eval_params['Modelname']
 
-    model_axial.to(device=device)
-    model_sagittal.to(device=device)
-    model_coronal.to(device=device)
-    model_axial = nn.DataParallel(model_axial)
-    model_sagittal = nn.DataParallel(model_sagittal)
-    model_coronal = nn.DataParallel(model_coronal)
+    # peek at one of the model files to identify
+    # expected number of input channels and output
+    # classes
+    nclasses, nchannels = truenet_utils.peek_model(f'{model_dir}/{model_name}_axial.pth')
 
-    model_name = eval_params['Modelname']
+    if nchannels != input_channels:
+        raise ImportError(f'Model {model_name} was trained on {nchannels} channels '
+                          f'(T1/FLAIR), but input data contains {input_channels} channels!')
 
-    try:
-        model_path = os.path.join(model_dir, model_name + '_axial.pth')
-        model_axial = truenet_utils.loading_model(model_path, model_axial, device)
+    models = {}
 
-        model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device)
-
-        model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-        model_coronal = truenet_utils.loading_model(model_path, model_coronal, device)
-    except:
-        try:
-            model_path = os.path.join(model_dir, model_name + '_axial.pth')
-            model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
-
-            model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
-
-            model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
-        except ImportError:
-            raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
-                              model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
-                              'does not appear to be a valid model file')
+    for plane in ['axial', 'sagittal', 'coronal']:
+        model_path = f'{model_dir}/{model_name}_{plane}.pth'
+        model = truenet_model.TrUENet(n_channels=nchannels, n_classes=nclasses, init_channels=64, plane=plane)
+        model.to(device=device)
+        model = nn.DataParallel(model)
+        model = truenet_utils.load_model(model_path, model, device)
+        models[plane] = model
 
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
+
     for sub in range(len(sub_name_dicts)):
         if verbose:
             print('Predicting output for subject ' + str(sub+1) + '...', flush=True)
@@ -83,58 +67,29 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
         probs_combined = []
         flair_path = test_sub_dict[0]['flair_path']
         flair_hdr = nib.load(flair_path).header
-        probs_axial = truenet_evaluate.evaluate_truenet(test_sub_dict, model_axial, eval_params, device,
-                                                        mode='axial', verbose=verbose)
-        probs_axial = truenet_data_postprocessing.resize_to_original_size(probs_axial, test_sub_dict,
-                                                                          plane='axial')
-        probs_combined.append(probs_axial)
 
-        if intermediate:
-            save_path = os.path.join(output_dir,'Predicted_probmap_truenet_' + basename + '_axial.nii.gz')
-            preds_axial = truenet_data_postprocessing.get_final_3dvolumes(probs_axial, test_sub_dict)
-            if verbose:
-                print('Saving the intermediate Axial prediction ...', flush=True)
+        for plane, model in models.items():
+            probs = truenet_evaluate.evaluate_truenet(
+                test_sub_dict, model, eval_params, device,
+                mode=plane, verbose=verbose)
+            probs = truenet_data_postprocessing.resize_to_original_size(
+                probs, test_sub_dict, plane=plane)
+            probs_combined.append(probs)
 
-            newhdr = flair_hdr.copy()
-            newobj = nib.nifti1.Nifti1Image(preds_axial, None, header=newhdr)
-            nib.save(newobj, save_path)
+            if intermediate:
+                save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}_{plane}')
+                preds = truenet_data_postprocessing.get_final_3dvolumes(probs, test_sub_dict)
+                if verbose:
+                    print(f'Saving the intermediate {plane} prediction ...', flush=True)
 
-        probs_sagittal = truenet_evaluate.evaluate_truenet(test_sub_dict, model_sagittal, eval_params, device,
-                                                        mode='sagittal', verbose=verbose)
-        probs_sagittal = truenet_data_postprocessing.resize_to_original_size(probs_sagittal, test_sub_dict,
-                                                                          plane='sagittal')
-        probs_combined.append(probs_sagittal)
-
-        if intermediate:
-            save_path = os.path.join(output_dir,'Predicted_probmap_truenet_' + basename + '_sagittal.nii.gz')
-            preds_sagittal = truenet_data_postprocessing.get_final_3dvolumes(probs_sagittal, test_sub_dict)
-            if verbose:
-                print('Saving the intermediate Sagittal prediction ...', flush=True)
-
-            newhdr = flair_hdr.copy()
-            newobj = nib.nifti1.Nifti1Image(preds_sagittal, None, header=newhdr)
-            nib.save(newobj, save_path)
-
-        probs_coronal = truenet_evaluate.evaluate_truenet(test_sub_dict, model_coronal, eval_params, device,
-                                                        mode='coronal', verbose=verbose)
-        probs_coronal = truenet_data_postprocessing.resize_to_original_size(probs_coronal, test_sub_dict,
-                                                                          plane='coronal')
-        probs_combined.append(probs_coronal)
-
-        if intermediate:
-            save_path = os.path.join(output_dir,'Predicted_probmap_truenet_' + basename + '_coronal.nii.gz')
-            preds_coronal = truenet_data_postprocessing.get_final_3dvolumes(probs_coronal, test_sub_dict)
-            if verbose:
-                print('Saving the intermediate Coronal prediction ...', flush=True)
-
-            newhdr = flair_hdr.copy()
-            newobj = nib.nifti1.Nifti1Image(preds_coronal, None, header=newhdr)
-            nib.save(newobj, save_path)
+                newhdr = flair_hdr.copy()
+                newobj = nib.nifti1.Nifti1Image(preds, None, header=newhdr)
+                nib.save(newobj, save_path)
 
         probs_combined = np.array(probs_combined)
         prob_mean = np.mean(probs_combined,axis=0)
 
-        save_path = os.path.join(output_dir,'Predicted_probmap_truenet_' + basename + '.nii.gz')
+        save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}')
         pred_mean = truenet_data_postprocessing.get_final_3dvolumes(prob_mean, test_sub_dict)
         if verbose:
             print('Saving the final prediction ...', flush=True)

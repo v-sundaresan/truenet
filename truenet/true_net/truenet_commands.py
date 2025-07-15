@@ -201,8 +201,7 @@ def evaluate(args):
     model_dir, model_name, pretrained = find_model(args)
 
     # Create the training parameters dictionary
-    eval_params = {'Nclass': args.num_classes,
-                   'EveryN': args.cp_everyn_N,
+    eval_params = {'EveryN': args.cp_everyn_N,
                    'Modelname': model_name,
                    'Numchannels': num_channels,
                    'Use_CPU': args.use_cpu
