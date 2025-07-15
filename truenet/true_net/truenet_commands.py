@@ -120,9 +120,9 @@ def find_model(args):
         'mwsc_flair' : 'Truenet_MWSC_FLAIR',
         'mwsc_t1'    : 'Truenet_MWSC_T1',
         'mwsc'       : 'Truenet_MWSC_FLAIR_T1',
-        'mwsc_flair' : 'Truenet_MWSC_FLAIR',
-        'mwsc_t1'    : 'Truenet_MWSC_T1',
-        'mwsc'       : 'Truenet_MWSC_FLAIR_T1',
+        'ukbb_flair' : 'Truenet_UKBB_FLAIR',
+        'ukbb_t1'    : 'Truenet_UKBB_T1',
+        'ukbb'       : 'Truenet_UKBB_FLAIR_T1',
     }
 
     pretrained = args.model_name in pretrained_models
@@ -213,7 +213,7 @@ def evaluate(args):
     # Test main function call
     truenet_test_function.main(
         subj_name_dicts, eval_params, intermediate=args.intermediate,
-        model_dir=args.model_dir, load_case=args.cp_load_type,
+        model_dir=model_dir, load_case=args.cp_load_type,
         output_dir=args.output_dir, verbose=args.verbose)
 
 
@@ -261,7 +261,7 @@ def fine_tune(args):
     truenet_finetune.main(
         subj_name_dicts, finetuning_params, aug=args.data_augmentation, weighted=weighted,
         save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose,
-        model_dir=args.model_dir, dir_cp=args.output_dir)
+        model_dir=model_dir, dir_cp=args.output_dir)
 
 ##########################################################################################
 # Define the loo_validate (leave-one-out validation) sub-command for truenet
