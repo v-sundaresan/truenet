@@ -97,8 +97,8 @@ def main():
     optionalTrain.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalTrain.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
     optionalTrain.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
-    optionalTrain.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images. Required if -loss=weighted')
-    optionalTrain.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
+    optionalTrain.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images (default: --inp_dir).')
+    optionalTrain.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images. (default: --inp_dir).')
     optionalTrain.add_argument('-nclass', '--num_classes', type = int, default=2, help='No of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
     optionalTrain.add_argument('-plane', '--acq_plane', default='all', help='Options: axial, sagittal, coronal, all (default = all)')
     optionalTrain.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
@@ -127,7 +127,7 @@ def main():
     optionalEvaluate.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model evaluation on CPU True/False (default=False)')
     optionalEvaluate.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate predictionss (individual planes) for each subject (default=False)')
     optionalEvaluate.add_argument('-cp_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default = last)')
-    optionalEvaluate.add_argument('-cp_n', '--cp_everyn_N', type = int, default=None, help='If -cp_type=specific, the N value (default=10)')
+    optionalEvaluate.add_argument('-cp_n', '--cp_everyn_N', type = int, help='If -cp_type=specific, the N value (default=10)')
     optionalEvaluate.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     requiredFt = parser_finetune.add_argument_group('Required arguments')
@@ -144,8 +144,8 @@ def main():
     optionalFt.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalFt.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
     optionalFt.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
-    optionalFt.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images. Required if -loss=weighted')
-    optionalFt.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
+    optionalFt.add_argument('-gdir', '--gmdist_dir', help='Directory containing GM distance map images (default: --inp_dir).')
+    optionalFt.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images (default: --inp_dir).')
     optionalFt.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be fine-tuned. Options: axial, sagittal, coronal, all (default=all)')
     optionalFt.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalFt.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
@@ -177,8 +177,8 @@ def main():
     optionalCv.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalCv.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
     optionalCv.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
-    optionalCv.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images. Required if -loss=weighted')
-    optionalCv.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
+    optionalCv.add_argument('-gdir', '--gmdist_dir', help='Directory containing GM distance map images (default: --inp_dir).')
+    optionalCv.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images (default: --inp_dir).')
     optionalCv.add_argument('-nclass', '--num_classes', type = int, default=2, help='No. of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
     optionalCv.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all (default=all)')
     optionalCv.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
@@ -213,11 +213,11 @@ def main():
 
     if getattr(args, 'loss_function', None) == 'weighted':
         if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
+            args.gmdist_dir = args.inp_dir
+        if args.ventdist_dir is None:
+            args.ventdist_dir = args.inp_dir
         if not op.isdir(args.gmdist_dir):
             raise ValueError(f'{args.gmdist_dir} does not appear to be a valid GM distance files directory')
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
         if not op.isdir(args.ventdist_dir):
             raise ValueError(f'{args.ventdist_dir} does not appear to be a valid ventricle distance files directory')
 
