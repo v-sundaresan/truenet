@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -121,7 +117,7 @@ class CombinedMultiLoss(_Loss):
     """
 
     def __init__(self, nclasses=2):
-        super(CombinedLoss, self).__init__()
+        super().__init__()
         self.cross_entropy_loss = CrossEntropyLoss2d()
         self.multi_dice_loss = MulticlassDiceLoss()
         self.nclasses = nclasses
@@ -148,7 +144,3 @@ class CombinedMultiLoss(_Loss):
                 l1 = torch.mean(
                     torch.mul(self.cross_entropy_loss.forward(input, target), weight.cuda()))
         return l1 + l2
-
-
-    
-
