@@ -33,8 +33,8 @@ def gather_inputs(args, training):
             gmdist_dir   = args.gmdist_dir
             ventdist_dir = args.ventdist_dir
 
-    input_flair_paths = imglob(['*_FLAIR'])
-    input_t1_paths    = imglob(['*_T1'])
+    input_flair_paths = imglob([f'{inp_dir}/*_FLAIR'])
+    input_t1_paths    = imglob([f'{inp_dir}/*_T1'])
     flairflag         = len(input_flair_paths) > 0
     t1flag            = len(input_t1_paths) > 0
 
