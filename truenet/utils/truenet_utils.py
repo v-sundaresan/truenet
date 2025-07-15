@@ -130,7 +130,7 @@ class EarlyStoppingModelCheckpointing:
         self.counter = 0
         self.best_score = None
         self.early_stop = False
-        self.val_loss_min = np.Inf
+        self.val_loss_min = np.inf
 
     def __call__(self, val_loss, val_dice, best_val_dice, model, epoch, optimizer, scheduler, loss, tr_prms,
                  weights=True, checkpoint=True, save_condition='best', model_path=None, plane='axial'):
