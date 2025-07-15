@@ -96,25 +96,25 @@ def main():
 
     optionalTrain.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalTrain.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
-    optionalTrain.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
+    optionalTrain.add_argument('-loss', '--loss_function', choices=('weighted', 'nweighted'), default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
     optionalTrain.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images (default: --inp_dir).')
     optionalTrain.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images. (default: --inp_dir).')
     optionalTrain.add_argument('-nclass', '--num_classes', type = int, default=2, help='No of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
-    optionalTrain.add_argument('-plane', '--acq_plane', default='all', help='Options: axial, sagittal, coronal, all (default = all)')
+    optionalTrain.add_argument('-plane', '--acq_plane', choices=('all', 'axial', 'sagittal', 'coronal'), default='all', help='Options: axial, sagittal, coronal, all (default = all)')
     optionalTrain.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalTrain.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
     optionalTrain.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalTrain.add_argument('-ilr', '--init_learng_rate', type = float, default=0.001, help='Initial LR to use in scheduler (default=0.001)')
     optionalTrain.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalTrain.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
-    optionalTrain.add_argument('-opt', '--optimizer', default='adam', help='Optimizer used for training. Options: adam, sgd (default=adam)')
+    optionalTrain.add_argument('-opt', '--optimizer', choices=('adam', 'sgd'), default='adam', help='Optimizer used for training. Options: adam, sgd (default=adam)')
     optionalTrain.add_argument('-eps', '--epsilon', type = float, default=1e-4, help='Epsilon for adam optimiser (default=1e-4)')
     optionalTrain.add_argument('-mom', '--momentum', type = float, default=0.9, help='Momentum for sgd optimiser (default=0.9)')
     optionalTrain.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
     optionalTrain.add_argument('-ep', '--num_epochs', type = int, default=60, help='Number of epochs (default=60)')
     optionalTrain.add_argument('-es', '--early_stop_val', type = int, default=20, help='No. of epochs to wait for progress (early stopping) (default=20)')
     optionalTrain.add_argument('-sv_mod', '--save_full_model', action='store_true', help='Saving the whole model instead of weights alone (default=False)')
-    optionalTrain.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
+    optionalTrain.add_argument('-cp_type', '--cp_save_type', choices=('best', 'last', 'everyN'), default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalTrain.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value (default=10)')
     optionalTrain.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
@@ -138,29 +138,29 @@ def main():
     requiredFt.add_argument('-m', '--model_name', required=True, help='Pretrained model name or model file basename')
     requiredFt.add_argument('-o', '--output_dir', required=True, help='Output directory for saving fine-tuned models/weights')
 
-    optionalFt.add_argument('-cpld_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default=last')
+    optionalFt.add_argument('-cpld_type', '--cp_load_type', choices=('best', 'last', 'specific'), default='last', help='Checkpoint to be loaded. Options: best, last, specific (default=last')
     optionalFt.add_argument('-cpld_n', '--cpload_everyn_N', type = int, default=10, help='If -cpld_type=specific, the N value (default=10)')
     optionalFt.add_argument('-ftlayers', '--ft_layers', nargs='+', type=int, default=2, help='Layers to fine-tune starting from the decoder (default=1 2)')
     optionalFt.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalFt.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
-    optionalFt.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
+    optionalFt.add_argument('-loss', '--loss_function', choices=('weighted', 'nweighted'), default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
     optionalFt.add_argument('-gdir', '--gmdist_dir', help='Directory containing GM distance map images (default: --inp_dir).')
     optionalFt.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images (default: --inp_dir).')
-    optionalFt.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be fine-tuned. Options: axial, sagittal, coronal, all (default=all)')
+    optionalFt.add_argument('-plane', '--acq_plane', choices=('all', 'axial', 'sagittal', 'coronal'), default='all', help='The plane in which the model needs to be fine-tuned. Options: axial, sagittal, coronal, all (default=all)')
     optionalFt.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalFt.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
     optionalFt.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalFt.add_argument('-ilr', '--init_learng_rate', type = float, default=0.0001, help='Initial LR to use for fine-tuning in scheduler (default=0.0001)')
     optionalFt.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalFt.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
-    optionalFt.add_argument('-opt', '--optimizer', default='adam', help='Optimizer used for training. Options:adam, sgd (default=adam)')
+    optionalFt.add_argument('-opt', '--optimizer', choices=('adam', 'sgd'), default='adam', help='Optimizer used for training. Options:adam, sgd (default=adam)')
     optionalFt.add_argument('-eps', '--epsilon', type = float, default=1e-4, help='Epsilon for adam optimiser (default=1e-4)')
     optionalFt.add_argument('-mom', '--momentum', type = float, default=0.9, help='Momentum for sgd optimiser (default=0.9)')
     optionalFt.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
     optionalFt.add_argument('-ep', '--num_epochs', type = int, default=60, help='Number of epochs (default=60)')
     optionalFt.add_argument('-es', '--early_stop_val', type = int, default=20, help='No. of epochs to wait for progress (early stopping) (default=20)')
     optionalFt.add_argument('-sv_mod', '--save_full_model', action='store_true', help='Saving the whole model instead of weights alone (default=False)')
-    optionalFt.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
+    optionalFt.add_argument('-cp_type', '--cp_save_type', choices=('best', 'last', 'everyN'), default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalFt.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
     optionalFt.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
     optionalFt.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model fine-tuning on CPU True/False (default=False)')
@@ -176,18 +176,18 @@ def main():
     optionalCv.add_argument('-resume_fold', '--resume_from_fold', type = int, default=1, help='Resume cross-validation from the specified fold (default = 1)')
     optionalCv.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalCv.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
-    optionalCv.add_argument('-loss', '--loss_function', default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
+    optionalCv.add_argument('-loss', '--loss_function', choices=('weighted', 'nweighted'), default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
     optionalCv.add_argument('-gdir', '--gmdist_dir', help='Directory containing GM distance map images (default: --inp_dir).')
     optionalCv.add_argument('-vdir', '--ventdist_dir', help='Directory containing ventricle distance map images (default: --inp_dir).')
     optionalCv.add_argument('-nclass', '--num_classes', type = int, default=2, help='No. of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
-    optionalCv.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all (default=all)')
+    optionalCv.add_argument('-plane', '--acq_plane', choices=('all', 'axial', 'sagittal', 'coronal'), default='all', help='The plane in which the model needs to be trained. Options: axial, sagittal, coronal, all (default=all)')
     optionalCv.add_argument('-da', '--data_augmentation', action='store_false', help='Applying data augmentation (default=True)')
     optionalCv.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
     optionalCv.add_argument('-sv_resume', '--save_resume_training', action='store_true', help='Whether to save and resume training in case of interruptions (default-False)')
     optionalCv.add_argument('-ilr', '--init_learng_rate', type = float, default=0.001, help='Initial LR to use in scheduler (default=0.001)')
     optionalCv.add_argument('-lrm', '--lr_sch_mlstone', nargs='+', type=int, default=10, help='Milestones for LR scheduler (default=10)')
     optionalCv.add_argument('-gamma', '--lr_sch_gamma', type = float, default=0.1, help='LR reduction factor in the LR scheduler (default=0.1)')
-    optionalCv.add_argument('-opt', '--optimizer', default='adam', help='Optimizer used for training. Options: adam, sgd (default=adam)')
+    optionalCv.add_argument('-opt', '--optimizer', choices=('adam', 'sgd'), default='adam', help='Optimizer used for training. Options: adam, sgd (default=adam)')
     optionalCv.add_argument('-eps', '--epsilon', type = float, default=1e-4, help='Epsilon for adam optimiser (default=1e-4)')
     optionalCv.add_argument('-mom', '--momentum', type = float, default=0.9, help='Momentum for sgd optimiser (default=0.9)')
     optionalCv.add_argument('-bs', '--batch_size', type = int, default=8, help='Batch size (default=8)')
@@ -196,7 +196,7 @@ def main():
     optionalCv.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate prediction results for each subject (default=False)')
     optionalCv.add_argument('-sv', '--save_checkpoint', action='store_true', help='Whether to save any checkpoint (default=False)')
     optionalCv.add_argument('-sv_mod', '--save_full_model', action='store_true', help='If -sv=True, whether to save the whole model or just weights (default=False, i.e. to save just weights); if -sv=False, nothing will be saved')
-    optionalCv.add_argument('-cp_type', '--cp_save_type', default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
+    optionalCv.add_argument('-cp_type', '--cp_save_type', choices=('best', 'last', 'everyN'), default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalCv.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
     optionalCv.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
@@ -224,12 +224,6 @@ def main():
     if hasattr(args, 'init_learng_rate') and not (0 <= args.init_learng_rate <= 1):
         raise ValueError('Initial learning rate must be between 0 and 1')
 
-    if hasattr(args, 'optimizer') and args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if hasattr(args, 'acq_plane') and args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
     if hasattr(args, 'lr_sch_gamma') and not (0 <= args.lr_sch_gamma <= 1):
         raise ValueError('Learning rate reduction factor must be between 0 and 1')
 
@@ -248,16 +242,10 @@ def main():
     if hasattr(args, 'aug_factor') and args.aug_factor < 1:
         raise ValueError('Augmentation factor must be an int and > 1')
 
-    if hasattr(args, 'cp_save_type') and (args.cp_save_type not in ['best', 'last', 'everyN']):
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
-
     if hasattr(args, 'cp_save_type') and args.cp_save_type == 'everyN':
         if not (1 <= args.cp_everyn_N <= args.num_epochs):
             raise ValueError(
                 'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-
-    if (args.cp_load_type not in ['best', 'last', 'specific']):
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, specific')
 
     if hasattr(args, 'cp_load_type') and (args.cp_load_type == 'specific'):
         args.cp_load_type = 'everyN'
