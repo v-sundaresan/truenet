@@ -150,7 +150,6 @@ def main():
     optionalFt.add_argument('-gdir', '--gmdist_dir', default=None, help='Directory containing GM distance map images. Required if -loss=weighted')
     optionalFt.add_argument('-vdir', '--ventdist_dir', default=None, help='Directory containing ventricle distance map images. Required if -loss=weighted')
     optionalFt.add_argument('-plane', '--acq_plane', default='all', help='The plane in which the model needs to be fine-tuned. Options: axial, sagittal, coronal, all (default=all)')
-    optionalFt.add_argument('-nclass', '--num_classes', type = int, default=2, help='No. of classes to consider in the target labels; any additional class will be considered part of background (default=2)')
     optionalFt.add_argument('-da', '--data_augmentation', type = bool, default=True, help='Applying data augmentation (default=True)')
     optionalFt.add_argument('-af', '--aug_factor', type = int, default=2, help='Data inflation factor for augmentation (default=2)')
     optionalFt.add_argument('-sv_resume', '--save_resume_training', type = bool, default=False, help='Whether to save and resume training in case of interruptions (default-False)')

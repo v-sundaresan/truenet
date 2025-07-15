@@ -1,7 +1,8 @@
 import torch
 import torch.nn as nn
 from torch import optim
-import os
+import functools as ft
+import os.path as op
 from truenet.true_net import (truenet_loss_functions,
                               truenet_model, truenet_train)
 from truenet.utils import (truenet_utils)
@@ -34,102 +35,29 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     if ft_params['Use_CPU']:
         device = torch.device("cpu")
 
-    nclass = ft_params['Nclass']
-    numchannels = ft_params['Numchannels']
-    pretrained = ft_params['Pretrained']
-    model_name = ft_params['Modelname']
+    # number of channels (T1/FLAIR) present in input
+    input_channels = ft_params['Numchannels']
+    model_name     = ft_params['Modelname']
 
-    if pretrained:
-        nclass = 2
-        model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
-        model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='sagittal')
-        model_coronal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='coronal')
+    # peek at one of the model files to identify
+    # expected number of input channels and output
+    # classes
+    model_path         = op.join(model_dir, model_name + '_axial.pth')
+    nclasses, nchannels = truenet_utils.peek_model(model_path)
 
-        model_axial.to(device=device)
-        model_sagittal.to(device=device)
-        model_coronal.to(device=device)
-        model_axial = nn.DataParallel(model_axial)
-        model_sagittal = nn.DataParallel(model_sagittal)
-        model_coronal = nn.DataParallel(model_coronal)
-        model_path = os.path.join(model_dir, model_name + '_axial.pth')
-        model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
+    if nchannels != input_channels:
+        raise ImportError(f'Model {model_name} was trained on {nchannels} channels '
+                          f'(T1/FLAIR), but input data contains {input_channels} channels!')
 
-        model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-        model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
+    models = {}
 
-        model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-        model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
-    else:
-        try:
-            model_path = os.path.join(model_dir, model_name + '_axial.pth')
-            state_dict = torch.load(model_path)
-            for key, value in state_dict.items():
-                if 'outconv' in key and 'weight' in key:
-                    nclass = state_dict[key].size()[0]
-                if 'inpconv' in key and 'weight' in key:
-                    numchannels = value.size()[1]
-            model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
-            model_axial.to(device=device)
-            model_axial = nn.DataParallel(model_axial)
-            model_axial = truenet_utils.loading_model(model_path, model_axial, device)
-
-            model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='sagittal')
-            model_sagittal.to(device=device)
-            model_sagittal = nn.DataParallel(model_sagittal)
-            model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-            model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device)
-
-            model_coronal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='coronal')
-            model_coronal.to(device=device)
-            model_coronal = nn.DataParallel(model_coronal)
-            model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-            model_coronal = truenet_utils.loading_model(model_path, model_coronal, device)
-        except:
-            try:
-                model_path = os.path.join(model_dir, model_name + '_axial.pth')
-                state_dict = torch.load(model_path)
-                for key, value in state_dict.items():
-                    if 'outconv' in key and 'weight' in key:
-                        nclass = state_dict[key].size()[0]
-                    if 'inpconv' in key and 'weight' in key:
-                        numchannels = value.size()[1]
-                model_axial = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='axial')
-                model_axial.to(device=device)
-                model_axial = nn.DataParallel(model_axial)
-                model_axial = truenet_utils.loading_model(model_path, model_axial, device, mode='full_model')
-
-                model_path = os.path.join(model_dir, model_name + '_sagittal.pth')
-                model_sagittal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64,
-                                                       plane='sagittal')
-                model_sagittal.to(device=device)
-                model_sagittal = nn.DataParallel(model_sagittal)
-                model_sagittal = truenet_utils.loading_model(model_path, model_sagittal, device, mode='full_model')
-
-                model_path = os.path.join(model_dir, model_name + '_coronal.pth')
-                model_coronal = truenet_model.TrUENet(n_channels=numchannels, n_classes=nclass, init_channels=64, plane='coronal')
-                model_coronal.to(device=device)
-                model_coronal = nn.DataParallel(model_coronal)
-                model_coronal = truenet_utils.loading_model(model_path, model_coronal, device, mode='full_model')
-            except ImportError:
-                raise ImportError('In directory ' + model_dir + ', ' + model_name + '_axial.pth or' +
-                                  model_name + '_sagittal.pth or' + model_name + '_coronal.pth ' +
-                                  'does not appear to be a valid model file')
-
-    if sub_name_dicts[0]['flair_path'] is None and sub_name_dicts[0]['t1_path'] is None:
-        raise ImportError('At least FLAIR or T1 must be provided in the masterfile')
-
-    if numchannels > 1:
-        if sub_name_dicts[0]['flair_path'] is None:
-            raise ImportError('The pretrained model requires 2 channels but FLAIR path not found in masterfile')
-        elif sub_name_dicts[0]['t1_path'] is None:
-            raise ImportError('The pretrained model requires 2 channels but T1 path not found in masterfile')
-
-    if numchannels == 1:
-        if sub_name_dicts[0]['flair_path'] is not None and sub_name_dicts[0]['t1_path'] is not None:
-            raise ImportError(
-                'Pretrained model requires only 1 channel but FLAIR and T1 are provided in the masterfile')
-
-    ft_params['Num_channels'] = numchannels
+    for plane in ['axial', 'sagittal', 'coronal']:
+        model_path = f'{model_dir}/{model_name}_{plane}.pth'
+        model = truenet_model.TrUENet(n_channels=nchannels, n_classes=nclasses, init_channels=64, plane=plane)
+        model.to(device=device)
+        model = nn.DataParallel(model)
+        model = truenet_utils.load_model(model_path, model, device)
+        models[plane] = model
 
     layers_to_ft = ft_params['Finetuning_layers']  # list of numbers [1,8]
     optim_type = ft_params['Optimizer']  # adam, sgd
@@ -146,81 +74,57 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
         layers_to_ft = [layers_to_ft]
 
     print('Total number of model parameters', flush=True)
-    print('Axial model: ', str(sum([p.numel() for p in model_axial.parameters()])), flush=True)
-    print('Sagittal model: ', str(sum([p.numel() for p in model_sagittal.parameters()])), flush=True)
-    print('Coronal model: ', str(sum([p.numel() for p in model_coronal.parameters()])), flush=True)
-
-    model_axial = truenet_utils.freeze_layer_for_finetuning(model_axial, layers_to_ft, verbose=verbose)
-    model_sagittal = truenet_utils.freeze_layer_for_finetuning(model_sagittal, layers_to_ft, verbose=verbose)
-    model_coronal = truenet_utils.freeze_layer_for_finetuning(model_coronal, layers_to_ft, verbose=verbose)
-    model_axial.to(device=device)
-    model_sagittal.to(device=device)
-    model_coronal.to(device=device)
+    print('Axial model: ', str(sum([p.numel() for p in models['axial'].parameters()])), flush=True)
+    print('Sagittal model: ', str(sum([p.numel() for p in models['sagittal'].parameters()])), flush=True)
+    print('Coronal model: ', str(sum([p.numel() for p in models['coronal'].parameters()])), flush=True)
 
     print('Total number of trainable parameters', flush=True)
-    model_parameters = filter(lambda p: p.requires_grad, model_axial.parameters())
-    params = sum([p.numel() for p in model_parameters])
-    print('Axial model: ', str(params), flush=True)
-    model_parameters = filter(lambda p: p.requires_grad, model_sagittal.parameters())
-    params = sum([p.numel() for p in model_parameters])
-    print('Sagittal model: ', str(params), flush=True)
-    model_parameters = filter(lambda p: p.requires_grad, model_coronal.parameters())
-    params = sum([p.numel() for p in model_parameters])
-    print('Coronal model: ', str(params), flush=True)
+    for plane, model in list(models.items()):
+        model = truenet_utils.freeze_layer_for_finetuning(model, layers_to_ft, verbose=verbose)
+        models[plane] = model
+        model_parameters = filter(lambda p: p.requires_grad, model.parameters())
+        params = sum([p.numel() for p in model_parameters])
+        print(f'{plane} model: ', str(params), flush=True)
 
     if optim_type == 'adam':
-        epsilon = ft_params['Epsilon']
-        optimizer_axial = optim.Adam(filter(lambda p: p.requires_grad,
-                                            model_axial.parameters()), lr=ft_lrt, eps=epsilon)
-        optimizer_sagittal = optim.Adam(filter(lambda p: p.requires_grad,
-                                               model_sagittal.parameters()), lr=ft_lrt, eps=epsilon)
-        optimizer_coronal = optim.Adam(filter(lambda p: p.requires_grad,
-                                              model_coronal.parameters()), lr=ft_lrt, eps=epsilon)
+        optimizer = ft.partial(optim.Adam, lr=ft_lrt, eps=ft_params['Epsilon'])
     elif optim_type == 'sgd':
-        moment = ft_params['Momentum']
-        optimizer_axial = optim.SGD(filter(lambda p: p.requires_grad,
-                                           model_axial.parameters()), lr=ft_lrt, momentum=moment)
-        optimizer_sagittal = optim.SGD(filter(lambda p: p.requires_grad,
-                                              model_sagittal.parameters()), lr=ft_lrt, momentum=moment)
-        optimizer_coronal = optim.SGD(filter(lambda p: p.requires_grad,
-                                             model_coronal.parameters()), lr=ft_lrt, momentum=moment)
+        optimizer = ft.partial(optim.Adam, lr=ft_lrt, momentum=ft_params['Momentum'])
     else:
         raise ValueError("Invalid optimiser choice provided! Valid options: 'adam', 'sgd'")
 
-    if nclass == 2:
+    optimizers = {}
+
+    for plane, model in models.items():
+        optimizers[plane] = optimizer(
+            filter(lambda p: p.requires_grad, model.parameters()))
+
+    if nclasses == 2:
         criterion = truenet_loss_functions.CombinedLoss()
     else:
-        criterion = truenet_loss_functions.CombinedMultiLoss(nclasses=nclass)
+        criterion = truenet_loss_functions.CombinedMultiLoss(nclasses=nclasses)
 
     if verbose:
         print('Found' + str(len(sub_name_dicts)) + 'subjects', flush=True)
 
     num_val_subs = max(int(len(sub_name_dicts) * (1-train_prop)), 1)
-    train_name_dicts, val_name_dicts, val_ids = truenet_utils.select_train_val_names(sub_name_dicts,
-                                                                                           num_val_subs)
+    train_name_dicts, val_name_dicts, val_ids = truenet_utils.select_train_val_names(
+        sub_name_dicts, num_val_subs)
 
-    if req_plane == 'all' or req_plane == 'axial':
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer_axial, milestones, gamma=gamma, last_epoch=-1)
-        model_axial = truenet_train.train_truenet(train_name_dicts, val_name_dicts, model_axial, criterion,
-                                                  optimizer_axial, scheduler, ft_params, device, mode='axial',
-                                                  augment=aug, weighted=weighted, save_checkpoint=save_cp,
-                                                  save_weights=save_wei, save_case=save_case, verbose=verbose,
-                                                  dir_checkpoint=dir_cp)
+    if req_plane == 'all': planes = ['axial', 'sagittal', 'coronal']
+    else:                  planes = [req_plane]
 
-    if req_plane == 'all' or req_plane == 'sagittal':
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer_sagittal, milestones, gamma=gamma, last_epoch=-1)
-        model_sagittal = truenet_train.train_truenet(train_name_dicts, val_name_dicts, model_sagittal, criterion,
-                                                     optimizer_sagittal, scheduler, ft_params, device, mode='sagittal',
-                                                     augment=aug, weighted=weighted, save_checkpoint=save_cp,
-                                                     save_weights=save_wei, save_case=save_case, verbose=verbose,
-                                                     dir_checkpoint=dir_cp)
+    for plane in planes:
+        optimizer = optimizers[plane]
+        model     = models[plane]
+        scheduler = optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones, gamma=gamma, last_epoch=-1)
 
-    if req_plane == 'all' or req_plane == 'coronal':
-        scheduler = optim.lr_scheduler.MultiStepLR(optimizer_coronal, milestones, gamma=gamma, last_epoch=-1)
-        model_coronal = truenet_train.train_truenet(train_name_dicts, val_name_dicts, model_coronal, criterion,
-                                                    optimizer_coronal, scheduler, ft_params, device, mode='coronal',
-                                                    augment=aug, weighted=weighted, save_checkpoint=save_cp,
-                                                    save_weights=save_wei, save_case=save_case, verbose=verbose,
-                                                    dir_checkpoint=dir_cp)
+        truenet_train.train_truenet(
+            train_name_dicts, val_name_dicts, model, criterion,
+            optimizer, scheduler, ft_params, device, mode=plane,
+            augment=aug, weighted=weighted, save_checkpoint=save_cp,
+            save_weights=save_wei, save_case=save_case, verbose=verbose,
+            dir_checkpoint=dir_cp)
 
     print('Model Fine-tuning done!', flush=True)

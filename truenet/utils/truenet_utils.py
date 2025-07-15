@@ -2,13 +2,26 @@ import numpy as np
 import random
 import os
 import torch
+import fnmatch
+
 from collections import OrderedDict
+
+from fsl.data.image import addExt
+
 
 #=========================================================================================
 # Truenet general utility functions
 # Vaanathi Sundaresan
 # 09-03-2021, Oxford
 #=========================================================================================
+
+
+def addSuffix(prefix):
+    """Adds a .nii/.nii.gz suffix to the given file prefix, based on the
+    value of the $FSLOUTPUTTYPE environment variable.
+    """
+    return addExt(prefix, mustExist=False)
+
 
 def select_train_val_names(data_path,val_numbers):
     '''
@@ -54,21 +67,57 @@ def freeze_layer_for_finetuning(model, layer_to_ft, verbose=False):
     return model
 
 
-def loading_model(model_name, model, device, mode='weights'):
+def load_model(model_path, model, device):
+    """Load a saved TRUENET model file. """
 
-    state_dict = torch.load(model_name, map_location=device)
-    if mode != 'weights':
-        state_dict = state_dict['model_state_dict']
+    # Models could have been saved with or without
+    # --save_full_model - if this was true, the
+    # model contains a bunch of other information
+    # that we don't need - we only want the model
+    # state dict, which will hanve been stored
+    # under a key named "model_state_dict".
+    try:
+        state_dict = torch.load(model_path, map_location=device)
+        if 'model_state_dict' in state_dict:
+            state_dict = state_dict['model_state_dict']
 
-    new_state_dict = OrderedDict()
-    for key, value in state_dict.items():
-        if 'module.' in key[:7]:
-            name = key  # remove `module.`
-        else:
-            name = 'module.' + key
-        new_state_dict[name] = value
-    model.load_state_dict(new_state_dict)
+        model.load_state_dict(state_dict)
+
+    except Exception as e:
+        raise Exception(f'{model_path} does not appear to be '
+                        'a valid truenet model file') from e
+
     return model
+
+
+def peek_model(model_path):
+    """Peeks inside the given model file and returns the number of input
+    channels and output classes.
+    """
+
+    try:
+        state_dict = torch.load(model_path, map_location=torch.device('cpu'))
+        # see comment in load model above
+        if 'model_state_dict' in state_dict:
+            state_dict = state_dict['model_state_dict']
+
+        nclasses  = None
+        nchannels = None
+
+        for key, value in state_dict.items():
+            if fnmatch.fnmatch(key, '*.outconv.*.weight'):
+                nclasses = value.size()[0]
+            if fnmatch.fnmatch(key, '*.inpconv.*.weight'):
+                nchannels = value.size()[1]
+
+        return nclasses, nchannels
+
+        if nclasses is None or nchannels is None:
+            raise Exception()
+
+    except Exception as e:
+        raise Exception(f'{model_path} does not appear to be '
+                        'a valid truenet model file') from e
 
 
 class EarlyStoppingModelCheckpointing:

@@ -128,7 +128,6 @@ def find_model(args):
     pretrained = args.model_name in pretrained_models
 
     if pretrained:
-        pretrained = True
         model_dir = op.expandvars(f'$FSLDIR/data/truenet/models/{args.model_name}')
         if not op.exists(model_dir):
             model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
@@ -204,7 +203,6 @@ def evaluate(args):
     # Create the training parameters dictionary
     eval_params = {'Nclass': args.num_classes,
                    'EveryN': args.cp_everyn_N,
-                   'Pretrained': pretrained,
                    'Modelname': model_name,
                    'Numchannels': num_channels,
                    'Use_CPU': args.use_cpu
@@ -243,11 +241,9 @@ def fine_tune(args):
                          'Patience': args.early_stop_val,
                          'Aug_factor': args.aug_factor,
                          'EveryN': args.cp_everyn_N,
-                         'Nclass': args.num_classes,
                          'Finetuning_layers': args.ft_layers,
                          'Load_type': args.cp_load_type,
                          'EveryNload': args.cpload_everyn_N,
-                         'Pretrained': pretrained,
                          'Modelname': model_name,
                          'SaveResume': args.save_resume_training,
                          'Numchannels': num_channels,
