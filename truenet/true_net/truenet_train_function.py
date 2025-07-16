@@ -13,11 +13,12 @@ from truenet.utils import truenet_utils
 # 09-03-2021, Oxford
 #=========================================================================================
 
-def main(sub_name_dicts, tr_params, aug=True, weighted=True,
+def main(sub_name_dicts, device, tr_params, aug=True, weighted=True,
          save_cp=True, save_wei=True, save_case='last', verbose=True, dir_cp=None):
     '''
     The main training function
     :param sub_name_dicts: list of dictionaries containing training filpaths
+    :param device: Pytorch device
     :param tr_params: dictionary of training parameters
     :param aug: bool, perform data augmentation
     :param weighted: bool, apply spatial weights in the loss function
@@ -28,8 +29,6 @@ def main(sub_name_dicts, tr_params, aug=True, weighted=True,
     :param dir_cp: str, directory for saving model/weights
     :return: trained model
     '''
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     assert len(sub_name_dicts) >= 5, "Number of distinct subjects for training cannot be less than 5"
 

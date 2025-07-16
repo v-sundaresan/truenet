@@ -12,11 +12,12 @@ from truenet.utils import truenet_utils
 # 09-03-2021, Oxford
 #=========================================================================================
 
-def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
+def main(sub_name_dicts, device, eval_params, intermediate=False, model_dir=None,
          load_case='last', output_dir=None, verbose=False):
     '''
     The main function for testing Truenet
     :param sub_name_dicts: list of dictionaries containing subject filepaths
+    :param device: Pytorch device
     :param eval_params: dictionary of evaluation parameters
     :param intermediate: bool, whether to save intermediate results
     :param model_dir: str, filepath containing the test model
@@ -25,11 +26,6 @@ def main(sub_name_dicts, eval_params, intermediate=False, model_dir=None,
     :param verbose: bool, display debug messages
     '''
     assert len(sub_name_dicts) > 0, "There must be at least 1 subject for testing."
-
-    if eval_params['Use_CPU']:
-        device = torch.device("cpu")
-    else:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # number of channels (T1/FLAIR) present in input
     input_channels = eval_params['Numchannels']

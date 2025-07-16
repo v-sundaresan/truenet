@@ -1,11 +1,15 @@
 import os
 import os.path as op
 import glob
-from truenet.true_net import (truenet_train_function, truenet_test_function,
-                              truenet_cross_validate, truenet_finetune)
+
+import torch
 
 from fsl.scripts.imglob import imglob
 from fsl.data.image     import addExt
+
+from truenet.true_net import (truenet_train_function, truenet_test_function,
+                              truenet_cross_validate, truenet_finetune)
+
 
 #=========================================================================================
 # Truenet commands function
@@ -202,12 +206,22 @@ def find_model(args):
     return op.abspath(model_dir), model_name
 
 
+def create_device(args):
+    """Creates the Pytorch device to be used throughout TRUENET."""
+
+    if args.use_cpu or (not torch.cuda.is_available()):
+        return torch.device("cpu")
+    else:
+        return torch.device("cuda")
+
+
 def train(args):
     '''
     :param args: Input arguments from argparse
     '''
 
     subj_name_dicts, num_channels = find_inputs(args, True)
+    device = create_device(args)
 
     # Create the training parameters dictionary
     training_params = {'Learning_rate': args.init_learng_rate,
@@ -234,7 +248,7 @@ def train(args):
 
     # Training main function call
     truenet_train_function.main(
-        subj_name_dicts, training_params,
+        subj_name_dicts, device, training_params,
         aug=args.data_augmentation, weighted=weighted,
         save_cp=True, save_wei=save_wei, save_case=args.cp_save_type,
         verbose=args.verbose, dir_cp=args.model_dir)
@@ -250,17 +264,17 @@ def evaluate(args):
     '''
     subj_name_dicts, num_channels = find_inputs(args, False)
     model_dir, model_name = find_model(args)
+    device = create_device(args)
 
     # Create the training parameters dictionary
     eval_params = {'EveryN': args.cp_everyn_N,
                    'Modelname': model_name,
-                   'Numchannels': num_channels,
-                   'Use_CPU': args.use_cpu
+                   'Numchannels': num_channels
                    }
 
     # Test main function call
     truenet_test_function.main(
-        subj_name_dicts, eval_params, intermediate=args.intermediate,
+        subj_name_dicts, device, eval_params, intermediate=args.intermediate,
         model_dir=model_dir, load_case=args.cp_load_type,
         output_dir=args.output_dir, verbose=args.verbose)
 
@@ -275,6 +289,7 @@ def fine_tune(args):
     '''
     subj_name_dicts, num_channels = find_inputs(args, True)
     model_dir, model_name = find_model(args)
+    device = create_device(args)
 
     # Create the fine-tuning parameters dictionary
     finetuning_params = {'Finetuning_learning_rate': args.init_learng_rate,
@@ -296,8 +311,7 @@ def fine_tune(args):
                          'EveryNload': args.cpload_everyn_N,
                          'Modelname': model_name,
                          'SaveResume': args.save_resume_training,
-                         'Numchannels': num_channels,
-                         'Use_CPU': args.use_cpu,
+                         'Numchannels': num_channels
                          }
 
     save_wei = not args.save_full_model
@@ -305,7 +319,7 @@ def fine_tune(args):
 
     # Fine-tuning main function call
     truenet_finetune.main(
-        subj_name_dicts, finetuning_params, aug=args.data_augmentation, weighted=weighted,
+        subj_name_dicts, device, finetuning_params, aug=args.data_augmentation, weighted=weighted,
         save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose,
         model_dir=model_dir, dir_cp=args.output_dir)
 
@@ -319,6 +333,7 @@ def cross_validate(args):
     '''
 
     subj_name_dicts, num_channels = find_inputs(args, True)
+    device = create_device(args)
 
     if len(subj_name_dicts) < args.cv_fold:
         raise ValueError('Number of folds is greater than number of subjects!')
@@ -353,7 +368,7 @@ def cross_validate(args):
 
     # Cross-validation main function call
     truenet_cross_validate.main(
-        subj_name_dicts, cv_params, aug=args.data_augmentation, weighted=weighted,
+        subj_name_dicts, device, cv_params, aug=args.data_augmentation, weighted=weighted,
         intermediate=args.intermediate, save_cp=args.save_checkpoint, save_wei=save_wei,
         save_case=args.cp_save_type, verbose=args.verbose, dir_cp=args.output_dir,
         output_dir=args.output_dir)

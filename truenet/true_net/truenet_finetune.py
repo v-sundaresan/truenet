@@ -14,11 +14,12 @@ from truenet.utils import (truenet_utils)
 #=========================================================================================
 
 
-def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_wei=True, save_case='best',
+def main(sub_name_dicts, device, ft_params, aug=True, weighted=True, save_cp=True, save_wei=True, save_case='best',
          verbose=True, model_dir=None, dir_cp=None):
     '''
     The main function for fine-tuning the model
     :param sub_name_dicts: list of dictionaries containing subject filepaths for fine-tuning
+    :param device: Pytorch device
     :param ft_params: dictionary of fine-tuning parameters
     :param aug: bool, whether to do data augmentation
     :param weighted: bool, whether to use spatial weights in loss function
@@ -30,10 +31,6 @@ def main(sub_name_dicts, ft_params, aug=True, weighted=True, save_cp=True, save_
     :param dir_cp: str, filepath for saving the model
     '''
     assert len(sub_name_dicts) >= 5, "Number of distinct subjects for fine-tuning cannot be less than 5"
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if ft_params['Use_CPU']:
-        device = torch.device("cpu")
 
     # number of channels (T1/FLAIR) present in input
     input_channels = ft_params['Numchannels']

@@ -37,7 +37,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
     :param val_dataloader: Dataloader object
     :param model: model
     :param batch_size: int
-    :param device: cpu or gpu (.cuda())
+    :param device: Pytorch device
     :param criterion: loss function
     :param weighted: bool, whether to apply spatial weights in loss function
     :param verbose: bool, display debug messages
@@ -102,7 +102,7 @@ def train_truenet(train_name_dicts, val_names_dicts, model, criterion, optimizer
     :param optimizer: optimiser
     :param scheduler: learning rate scheduler
     :param train_params: dictionary of training parameters
-    :param device: cpu() or cuda()
+    :param device: pytorch device
     :param mode: str, acquisition plane
     :param augment: bool, perform data sugmentation
     :param weighted: bool, apply spatial weights in loss function

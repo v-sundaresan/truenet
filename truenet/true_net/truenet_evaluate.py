@@ -31,7 +31,7 @@ def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', 
     :param test_name_dicts: list of dictionaries with test filepaths
     :param model: test model
     :param test_params: parameters used for testing
-    :param device: cpu or gpu
+    :param device: pytorch device
     :param mode: acquisition plane
     :param verbose: display debug messages
     :return: predicted probability array

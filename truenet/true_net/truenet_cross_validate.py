@@ -16,11 +16,12 @@ from truenet.utils import truenet_utils
 # 09-03-2021, Oxford
 #=========================================================================================
 
-def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
+def main(sub_name_dicts, device, cv_params, aug=True, weighted=True, intermediate=False,
          save_cp=False, save_wei=True, save_case='best', verbose=True, dir_cp=None, output_dir=None):
     '''
     The main function for leave-one-out validation of Truenet
     :param sub_name_dicts: list of dictionaries containing subject filepaths
+    :param device: Pytorch device
     :param cv_params: dictionary of LOO paramaters
     :param aug: bool, whether to do data augmentation
     :param weighted: bool, whether to use spatial weights in loss function
@@ -34,7 +35,6 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
     '''
 
     assert len(sub_name_dicts) >= 5, "Number of distinct subjects for Leave-one-out validation cannot be less than 5"
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     nclass = cv_params['Nclass']
     num_channels = cv_params['Numchannels']
 
