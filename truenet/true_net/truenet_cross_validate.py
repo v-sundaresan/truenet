@@ -129,12 +129,12 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
                     test_sub_dict, model, cv_params, device,
                     mode=plane, verbose=verbose)
                 probs = truenet_data_postprocessing.resize_to_original_size(
-                    probs, test_sub_dict, plane=plane)
+                    probs, flair_path, plane=plane)
                 probs_combined.append(probs)
 
                 if intermediate:
                     save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}_{plane}')
-                    preds = truenet_data_postprocessing.get_final_3dvolumes(probs, test_sub_dict)
+                    preds = truenet_data_postprocessing.get_final_3dvolumes(probs, flair_path)
                     if verbose:
                         print(f'Saving the intermediate {plane} prediction ...', flush=True)
 
@@ -146,7 +146,7 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
             prob_mean = np.mean(probs_combined,axis = 0)
 
             save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}')
-            pred_mean = truenet_data_postprocessing.get_final_3dvolumes(prob_mean, test_sub_dict)
+            pred_mean = truenet_data_postprocessing.get_final_3dvolumes(prob_mean, flair_path)
             if verbose:
                 print('Saving the final prediction ...', flush=True)
 
