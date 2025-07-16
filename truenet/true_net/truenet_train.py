@@ -75,7 +75,7 @@ def validate_truenet(val_dataloader, model, batch_size, device, criterion, weigh
                     loss = criterion(val_pred, y, weight=None)
 
                 running_val_loss += loss.item()
-                softmax = nn.Softmax()
+                softmax = nn.Softmax(dim=1)
                 probs = softmax(val_pred)
                 probs_vector = probs.contiguous().view(-1,2)
                 mask_vector = (probs_vector[:,1] > 0.5).double()

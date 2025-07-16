@@ -59,7 +59,7 @@ def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', 
                 print('Validation mask dimensions........')
                 print(val_pred.size())
 
-            softmax = nn.Softmax()
+            softmax = nn.Softmax(dim=1)
             probs = softmax(val_pred)
 
             probs_nparray = probs.detach().cpu().numpy()
