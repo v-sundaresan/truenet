@@ -50,7 +50,7 @@ def gather_inputs(args, training):
     if have_flair:
         subj_ids = [op.basename(p.removesuffix('_FLAIR')) for p in flair_paths]
     else:
-        subj_ids = [op.basename(p.removesuffix('_T1')) for p in flair_paths]
+        subj_ids = [op.basename(p.removesuffix('_T1')) for p in t1_paths]
 
     # Create a list of dictionaries containing required filepaths for the input subjects
     subj_name_dicts = []
@@ -63,34 +63,37 @@ def gather_inputs(args, training):
 
         if have_flair and (not ignore_flair):
             try:
-                flair_path = addExt('{inp_dir}/{subj_id}_FLAIR')
+                flair_path = addExt(f'{inp_dir}/{subj_id}_FLAIR')
                 print(f'FLAIR image found for {subj_id}')
             except Exception:
-                raise ValueError(f'FLAIR image missing for {subj_id}')
+                raise ValueError(f'FLAIR image missing: {inp_dir}/{subj_id}_FLAIR')
 
         if have_t1 and (not ignore_t1):
             try:
                 t1_path = addExt(f'{inp_dir}/{subj_id}_T1')
                 print(f'T1 image found for {subj_id}')
             except Exception:
-                raise ValueError(f'T1 image missing for {subj_id}')
+                raise ValueError(f'T1 image missing for {inp_dir}/{subj_id}_T1')
 
         if training:
             try:
                 gt_path = addExt(f'{label_dir}/{subj_id}_manualmask')
+                print(f'Lesion mask found for {subj_id}')
             except Exception:
-                raise ValueError(f'Manual lesion mask missing for {subj_id}')
+                raise ValueError(f'Manual lesion mask missing: {label_dir}/{subj_id}_manualmask')
 
         if training and (args.loss_function == 'weighted'):
             try:
                 gmdist_path = addExt(f'{gmdist_dir}/{subj_id}_GMdistmap')
+                print(f'GM distance map found for {subj_id}')
             except Exception:
-                raise ValueError(f'GM distance map missing for {subj_id}')
+                raise ValueError(f'GM distance map missing: {gmdist_dir}/{subj_id}_GMdistmap')
 
             try:
                 ventdist_path = addExt(f'{ventdist_dir}/{subj_id}_ventdistmap')
+                print(f'Ventricle distance map found for {subj_id}')
             except Exception:
-                raise ValueError(f'Ventricle distance map missing for {subj_id}')
+                raise ValueError(f'Ventricle distance map missing: {ventdist_dir}/{subj_id}_ventdistmap')
 
         subj_name_dicts.append({
             'flair_path'    : flair_path,
