@@ -23,9 +23,11 @@ def gather_inputs(args, training):
     subject, containing input file paths.
     """
 
-    inp_dir  = args.inp_dir
-    label_dir = None
-    gmdist_dir = None
+    ignore_flair = args.t1_only
+    ignore_t1    = args.flair_only
+    inp_dir      = args.inp_dir
+    label_dir    = None
+    gmdist_dir   = None
     ventdist_dir = None
 
     if training:
@@ -36,8 +38,8 @@ def gather_inputs(args, training):
 
     flair_paths = imglob([f'{inp_dir}/*_FLAIR'])
     t1_paths    = imglob([f'{inp_dir}/*_T1'])
-    have_flair  = len(flair_paths) > 0
-    have_t1     = len(t1_paths) > 0
+    have_flair  = (len(flair_paths)) > 0 and (not ignore_flair)
+    have_t1     = (len(t1_paths))    > 0 and (not ignore_t1)
 
     if not (have_flair or have_t1):
         raise ValueError(f'Cannot find any FLAIR/T1 images in {inp_dir} - '
@@ -59,14 +61,14 @@ def gather_inputs(args, training):
         ventdist_path = None
         gt_path       = None
 
-        if have_flair:
+        if have_flair and (not ignore_flair):
             try:
                 flair_path = addExt('{inp_dir}/{subj_id}_FLAIR')
                 print(f'FLAIR image found for {subj_id}')
             except Exception:
                 raise ValueError(f'FLAIR image missing for {subj_id}')
 
-        if have_t1:
+        if have_t1 and (not ignore_t1):
             try:
                 t1_path = addExt(f'{inp_dir}/{subj_id}_T1')
                 print(f'T1 image found for {subj_id}')

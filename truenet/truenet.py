@@ -129,6 +129,8 @@ def main():
     optionalEvaluate.add_argument('-int', '--intermediate', action='store_true', help='Saving intermediate predictionss (individual planes) for each subject (default=False)')
     optionalEvaluate.add_argument('-cp_type', '--cp_load_type', default='last', help='Checkpoint to be loaded. Options: best, last, specific (default = last)')
     optionalEvaluate.add_argument('-cp_n', '--cp_everyn_N', type = int, help='If -cp_type=specific, the N value (default=10)')
+    optionalEvaluate.add_argument('-to', '--t1_only', action='store_true', help='Only use T1 images (ignore FLAIR images if present)')
+    optionalEvaluate.add_argument('-fo', '--flair_only', action='store_true', help='Only use FLAIR images (ignore T1 images if present)')
     optionalEvaluate.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     requiredFt = parser_finetune.add_argument_group('Required arguments')
@@ -163,8 +165,10 @@ def main():
     optionalFt.add_argument('-sv_mod', '--save_full_model', action='store_true', help='Saving the whole model instead of weights alone (default=False)')
     optionalFt.add_argument('-cp_type', '--cp_save_type', choices=('best', 'last', 'everyN'), default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalFt.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
-    optionalFt.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
     optionalFt.add_argument('-cpu', '--use_cpu', action='store_true', help='Perform model fine-tuning on CPU True/False (default=False)')
+    optionalFt.add_argument('-to', '--t1_only', action='store_true', help='Only use T1 images (ignore FLAIR images if present)')
+    optionalFt.add_argument('-fo', '--flair_only', action='store_true', help='Only use FLAIR images (ignore T1 images if present)')
+    optionalFt.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     requiredCv = parser_cv.add_argument_group('Required arguments')
     optionalCv = parser_cv.add_argument_group('Optional arguments')
@@ -199,6 +203,8 @@ def main():
     optionalCv.add_argument('-sv_mod', '--save_full_model', action='store_true', help='If -sv=True, whether to save the whole model or just weights (default=False, i.e. to save just weights); if -sv=False, nothing will be saved')
     optionalCv.add_argument('-cp_type', '--cp_save_type', choices=('best', 'last', 'everyN'), default='last', help='Checkpoint saving options: best, last, everyN (default=last)')
     optionalCv.add_argument('-cp_n', '--cp_everyn_N', type = int, default=10, help='If -cp_type=everyN, the N value')
+    optionalCv.add_argument('-to', '--t1_only', action='store_true', help='Only use T1 images (ignore FLAIR images if present)')
+    optionalCv.add_argument('-fo', '--flair_only', action='store_true', help='Only use FLAIR images (ignore T1 images if present)')
     optionalCv.add_argument('-v', '--verbose', action='store_true', help='Display debug messages (default=False)')
 
     args = parser.parse_args()
