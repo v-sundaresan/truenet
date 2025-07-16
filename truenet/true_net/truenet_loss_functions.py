@@ -28,7 +28,7 @@ class DiceLoss(_WeightedLoss):
         target_vect = target_binary.contiguous().view(-1)
         intersection = (pred_vect * target_vect).sum()
         dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
-        return -dice
+        return -dice.to(torch.float)
 
 
 class MulticlassDiceLoss(_WeightedLoss):
@@ -52,8 +52,8 @@ class MulticlassDiceLoss(_WeightedLoss):
             intersection = (pred_vect * target_vect).sum()
             dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
             dice_val += dice
-        dice_val = dice_val/numclasses
-        return -dice_val
+        dice_val = (dice_val/numclasses)
+        return -dice_val.to(torch.float)
 
 
 class CrossEntropyLoss2d(_WeightedLoss):
@@ -72,6 +72,7 @@ class CrossEntropyLoss2d(_WeightedLoss):
         :param targets: torch.tensor (N)
         :return: scalar
         """
+        targets = targets.to(torch.long)
         return self.nll_loss(inputs, targets)
 
 
