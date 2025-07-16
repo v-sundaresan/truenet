@@ -73,7 +73,7 @@ def gather_inputs(args, training):
             if imtest(f'{label_dir}/{basename}_manualmask'):
                 gt_path_name = addExt(f'{label_dir}/{basename}_manualmask')
             else:
-                raise ValueError('Manuallesion mask does not exist for ' + basename)
+                raise ValueError('Manual lesion mask does not exist for ' + basename)
 
             if args.loss_function == 'weighted':
                 if imtest(f'{gmdist_dir}/{basename}_GMdistmap'):
@@ -110,11 +110,19 @@ def gather_inputs(args, training):
 
 
 def find_model(args):
-    """Prepares the path to the model files. """
+    """Figures out the path to the pre-trained/custom model files.
+    Returns the model directory and model name (which is the model
+    file prefix, i.e. <model_name>_axial.pth, etc.).
+    """
 
-    # Dictionary of pre-trained models: { <model-id> : <model-name> }.
+    # Dictionary of pre-trained models: { <model-id> : <model-prefix> }.
     # The <model-id> is passed on the command-line, and is also the
-    # directory name in $FSLDIR/data/truenet/models/
+    # directory name in $FSLDIR/data/truenet/models/, i.e. pre-trained
+    # models are named
+    #
+    # $FSLDIR/data/truenet/models/<model-id>/<model-prefix>_axial.pth
+    #
+    # etc
     pretrained_models = {
         'mwsc_flair' : 'Truenet_MWSC_FLAIR',
         'mwsc_t1'    : 'Truenet_MWSC_T1',
@@ -124,30 +132,52 @@ def find_model(args):
         'ukbb'       : 'Truenet_UKBB_FLAIR_T1',
     }
 
-    pretrained = args.model_name in pretrained_models
+    # We're given either the ID of a pre-trained
+    # model, or a directory/file_name_prefix.
 
-    if pretrained:
-        model_dir = op.expandvars(f'$FSLDIR/data/truenet/models/{args.model_name}')
-        if not op.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_'
-                                   f'MODEL_PATH=/path/to/my/mwsc/{args.model_name}')
+    # name of pre-trained model
+    if args.model_name in pretrained_models:
+        model_id   = args.model_name
+        model_name = pretrained_models[model_id]
 
-    # should be a file name prefix
+        # Search for model directory - will either
+        # be in $FSLDIR/<model_id>, or in
+        # $TRUENET_PRETRAINED_MODEL_PATH/<model_id>
+        model_dir  = None
+        candidates = [op.expandvars('$FSLDIR/data/truenet/models/'),
+                      os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)]
+
+        for candidate in candidates:
+            if candidate is None:
+                continue
+
+            candidate = f'{candidate}/{model_id}'
+
+            if op.isdir(candidate):
+                model_dir = candidate
+                break
+
+    # or a file name prefix
     else:
-        model_dir  = op.dirname(args.model_name)
+        model_dir  = op.abspath(op.dirname(args.model_name))
         model_name = op.basename(args.model_name)
-        axial      = f'{args.model_name}_axial.pth'
-        sagittal   = f'{args.model_name}_sagittal.pth'
-        coronal    = f'{args.model_name}_coronal.pth'
-        if not (op.isfile(axial),
-                op.isfile(sagittal),
-                op.isfile(coronal)):
-            raise ValueError(f'In directory {model_dir}, {axial} or {sagittal} or '
-                             f'{coronal} does not appear to be a valid model file')
 
-    return model_dir, model_name, pretrained
+    if (model_dir is None) or (not op.isdir(model_dir)):
+        raise RuntimeError(
+            'Cannot find TRUENET model files at {model_dir}/{model_name} '
+            'check that the path/model name is correct, that pre-trained '
+            'TRUENET models are installed, and/or export TRUENET_PRETRAINED_'
+            'MODEL_PATH=/path/to/my/truenet/models/')
+
+    axial      = f'{model_dir}/{model_name}_axial.pth'
+    sagittal   = f'{model_dir}/{model_name}_sagittal.pth'
+    coronal    = f'{model_dir}/{model_name}_coronal.pth'
+    for model_file in [axial, sagittal, coronal]:
+        if not op.isfile(model_file):
+            raise ValueError(f'{model_file} does not appear to be a '
+                             'valid TRUENET model file')
+
+    return model_dir, model_name
 
 
 def train(args):
@@ -197,7 +227,7 @@ def evaluate(args):
     :param args: Input arguments from argparse
     '''
     subj_name_dicts, num_channels = gather_inputs(args, False)
-    model_dir, model_name, pretrained = find_model(args)
+    model_dir, model_name = find_model(args)
 
     # Create the training parameters dictionary
     eval_params = {'EveryN': args.cp_everyn_N,
@@ -222,7 +252,7 @@ def fine_tune(args):
     :param args: Input arguments from argparse
     '''
     subj_name_dicts, num_channels = gather_inputs(args, True)
-    model_dir, model_name, pretrained = find_model(args)
+    model_dir, model_name = find_model(args)
 
     # Create the fine-tuning parameters dictionary
     finetuning_params = {'Finetuning_learning_rate': args.init_learng_rate,
