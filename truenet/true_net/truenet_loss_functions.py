@@ -14,7 +14,7 @@ class DiceLoss(_WeightedLoss):
     Dice loss
     '''
     def __init__(self, weight=None):
-        super(DiceLoss, self).__init__(weight)
+        super().__init__(weight)
 
     def forward(self, pred_binary, target_binary):
         """
@@ -28,8 +28,6 @@ class DiceLoss(_WeightedLoss):
         target_vect = target_binary.contiguous().view(-1)
         intersection = (pred_vect * target_vect).sum()
         dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        dice = dice.to(device=device,dtype=torch.float)
         return -dice
 
 
@@ -55,8 +53,6 @@ class MulticlassDiceLoss(_WeightedLoss):
             dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
             dice_val += dice
         dice_val = dice_val/numclasses
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        dice_val = dice_val.to(device=device,dtype=torch.float)
         return -dice_val
 
 
@@ -76,8 +72,6 @@ class CrossEntropyLoss2d(_WeightedLoss):
         :param targets: torch.tensor (N)
         :return: scalar
         """
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        targets = targets.to(device=device, dtype=torch.long)
         return self.nll_loss(inputs, targets)
 
 
