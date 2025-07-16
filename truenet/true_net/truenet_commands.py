@@ -4,7 +4,6 @@ from truenet.true_net import (truenet_train_function, truenet_test_function,
                               truenet_cross_validate, truenet_finetune)
 
 from fsl.scripts.imglob import imglob
-from fsl.scripts.imtest import imtest
 from fsl.data.image     import addExt
 
 #=========================================================================================
@@ -20,7 +19,9 @@ from fsl.data.image     import addExt
 
 
 def gather_inputs(args, training):
-    """Gathers paths to input files. """
+    """Gathers paths to input files. Returns a list of dictionaries, one for each
+    subject, containing input file paths.
+    """
 
     inp_dir  = args.inp_dir
     label_dir = None
@@ -33,78 +34,72 @@ def gather_inputs(args, training):
             gmdist_dir   = args.gmdist_dir
             ventdist_dir = args.ventdist_dir
 
-    input_flair_paths = imglob([f'{inp_dir}/*_FLAIR'])
-    input_t1_paths    = imglob([f'{inp_dir}/*_T1'])
-    flairflag         = len(input_flair_paths) > 0
-    t1flag            = len(input_t1_paths) > 0
+    flair_paths = imglob([f'{inp_dir}/*_FLAIR'])
+    t1_paths    = imglob([f'{inp_dir}/*_T1'])
+    have_flair  = len(flair_paths) > 0
+    have_t1     = len(t1_paths) > 0
 
-    if not (flairflag or t1flag):
-        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
+    if not (have_flair or have_t1):
+        raise ValueError(f'Cannot find any FLAIR/T1 images in {inp_dir} - '
+                         'check that the input directory is correct, and '
+                         'that files are named appropriately, e.g. '
+                         '<subj-id>_FLAIR.nii.gz')
 
-    if flairflag:
-        input_paths = input_flair_paths
+    if have_flair:
+        subj_ids = [op.basename(p.removesuffix('_FLAIR')) for p in flair_paths]
     else:
-        input_paths = input_t1_paths
+        subj_ids = [op.basename(p.removesuffix('_T1')) for p in flair_paths]
 
     # Create a list of dictionaries containing required filepaths for the input subjects
     subj_name_dicts = []
-    for l in range(len(input_paths)):
-        flair_path_name = None
-        t1_path_name = None
-        gmdist_path_name = None
-        ventdist_path_name = None
-        gt_path_name = None
+    for subj_id in subj_ids:
+        flair_path    = None
+        t1_path       = None
+        gmdist_path   = None
+        ventdist_path = None
+        gt_path       = None
 
-        if flairflag:
-            flair_path_name = addExt(input_paths[l])
-            basepath        = input_paths[l].removesuffix("_FLAIR")
-            basename        = op.basename(basepath)
-            print('FLAIR image found for ' + basename, flush=True)
-            if imtest(f'{basepath}_T1'):
-                t1_path_name = addExt(f'{basepath}_T1')
-                print('T1 image found for ' + basename, flush=True)
-        else:
-            t1_path_name = addExt(input_paths[l])
-            basepath     = input_paths[l].removesuffix("_T1")
-            basename     = op.basename(basepath)
-            print('T1 image found for ' + basename, flush=True)
+        if have_flair:
+            try:
+                flair_path = addExt('{inp_dir}/{subj_id}_FLAIR')
+                print(f'FLAIR image found for {subj_id}')
+            except Exception:
+                raise ValueError(f'FLAIR image missing for {subj_id}')
+
+        if have_t1:
+            try:
+                t1_path = addExt(f'{inp_dir}/{subj_id}_T1')
+                print(f'T1 image found for {subj_id}')
+            except Exception:
+                raise ValueError(f'T1 image missing for {subj_id}')
 
         if training:
-            if imtest(f'{label_dir}/{basename}_manualmask'):
-                gt_path_name = addExt(f'{label_dir}/{basename}_manualmask')
-            else:
-                raise ValueError('Manual lesion mask does not exist for ' + basename)
+            try:
+                gt_path = addExt(f'{label_dir}/{subj_id}_manualmask')
+            except Exception:
+                raise ValueError(f'Manual lesion mask missing for {subj_id}')
 
-            if args.loss_function == 'weighted':
-                if imtest(f'{gmdist_dir}/{basename}_GMdistmap'):
-                    gmdist_path_name = addExt(f'{gmdist_dir}/{basename}_GMdistmap')
-                else:
-                    raise ValueError('GM distance file does not exist for ' + basename)
+        if training and (args.loss_function == 'weighted'):
+            try:
+                gmdist_path = addExt(f'{gmdist_dir}/{subj_id}_GMdistmap')
+            except Exception:
+                raise ValueError(f'GM distance map missing for {subj_id}')
 
-                if imtest(f'{ventdist_dir}/{basename}_ventdistmap'):
-                    ventdist_path_name = addExt(f'{ventdist_dir}/{basename}_ventdistmap')
-                else:
-                    raise ValueError('Ventricle distance file does not exist for ' + basename)
+            try:
+                ventdist_path = addExt(f'{ventdist_dir}/{subj_id}_ventdistmap')
+            except Exception:
+                raise ValueError(f'Ventricle distance map missing for {subj_id}')
 
-        subj_name_dict = {'flair_path': flair_path_name,
-                          't1_path': t1_path_name,
-                          'gt_path': gt_path_name,
-                          'gmdist_path': gmdist_path_name,
-                          'ventdist_path': ventdist_path_name,
-                          'basename': basename}
-        subj_name_dicts.append(subj_name_dict)
+        subj_name_dicts.append({
+            'flair_path'    : flair_path,
+            't1_path'       : t1_path,
+            'gt_path'       : gt_path,
+            'gmdist_path'   : gmdist_path,
+            'ventdist_path' : ventdist_path,
+            'basename'      : subj_id
+        })
 
-    nflairs = len(input_flair_paths)
-    nt1s    = len(input_t1_paths)
-    if nflairs > 0:
-        if nflairs != nt1s:
-            raise ValueError('For one or more subjects, T1 files are missing for corresponding FLAIR files')
-        elif nt1s == 0:
-            num_channels = 1
-        else:
-            num_channels = 2
-    else:
-        num_channels = 1
+    num_channels = int(have_flair) + int(have_t1)
 
     return subj_name_dicts, num_channels
 
