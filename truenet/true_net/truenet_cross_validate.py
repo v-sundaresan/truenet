@@ -117,11 +117,16 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
         for sub in range(len(test_sub_dicts)):
             if verbose:
                 print('Predicting for subject ' + str(sub + 1) + '...', flush=True)
-            test_sub_dict = [test_sub_dicts[sub]]
-            basename = test_sub_dict[0]['basename']
+            test_sub_dict = test_sub_dicts[sub]
+            basename = test_sub_dict['basename']
             probs_combined = []
-            flair_path = test_sub_dict[0]['flair_path']
-            flair_hdr = nib.load(flair_path).header
+            if test_sub_dict['flair_path'] is not None:
+                input_path = test_sub_dict['flair_path']
+            else:
+                input_path = test_sub_dict['t1_path']
+            input_hdr = nib.load(input_path).header
+
+            # TODO flair_path need to be fixed
 
             for plane, model in models.items():
 
@@ -129,16 +134,16 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
                     test_sub_dict, model, cv_params, device,
                     mode=plane, verbose=verbose)
                 probs = truenet_data_postprocessing.resize_to_original_size(
-                    probs, flair_path, plane=plane)
+                    probs, input_path, plane=plane)
                 probs_combined.append(probs)
 
                 if intermediate:
                     save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}_{plane}')
-                    preds = truenet_data_postprocessing.get_final_3dvolumes(probs, flair_path)
+                    preds = truenet_data_postprocessing.get_final_3dvolumes(probs, input_path)
                     if verbose:
                         print(f'Saving the intermediate {plane} prediction ...', flush=True)
 
-                    newhdr = flair_hdr.copy()
+                    newhdr = input_hdr.copy()
                     newobj = nib.nifti1.Nifti1Image(preds, None, header=newhdr)
                     nib.save(newobj, save_path)
 
@@ -146,11 +151,11 @@ def main(sub_name_dicts, cv_params, aug=True, weighted=True, intermediate=False,
             prob_mean = np.mean(probs_combined,axis = 0)
 
             save_path = truenet_utils.addSuffix(f'{output_dir}/Predicted_probmap_truenet_{basename}')
-            pred_mean = truenet_data_postprocessing.get_final_3dvolumes(prob_mean, flair_path)
+            pred_mean = truenet_data_postprocessing.get_final_3dvolumes(prob_mean, input_path)
             if verbose:
                 print('Saving the final prediction ...', flush=True)
 
-            newhdr = flair_hdr.copy()
+            newhdr = input_hdr.copy()
             newobj = nib.nifti1.Nifti1Image(pred_mean, None, header=newhdr)
             nib.save(newobj, save_path)
 
