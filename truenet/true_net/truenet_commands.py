@@ -18,7 +18,7 @@ from fsl.data.image     import addExt
 ##########################################################################################
 
 
-def gather_inputs(args, training):
+def find_inputs(args, training):
     """Gathers paths to input files. Returns a list of dictionaries, one for each
     subject, containing input file paths.
     """
@@ -185,7 +185,7 @@ def train(args):
     :param args: Input arguments from argparse
     '''
 
-    subj_name_dicts, num_channels = gather_inputs(args, True)
+    subj_name_dicts, num_channels = find_inputs(args, True)
 
     # Create the training parameters dictionary
     training_params = {'Learning_rate': args.init_learng_rate,
@@ -226,7 +226,7 @@ def evaluate(args):
     '''
     :param args: Input arguments from argparse
     '''
-    subj_name_dicts, num_channels = gather_inputs(args, False)
+    subj_name_dicts, num_channels = find_inputs(args, False)
     model_dir, model_name = find_model(args)
 
     # Create the training parameters dictionary
@@ -251,7 +251,7 @@ def fine_tune(args):
     '''
     :param args: Input arguments from argparse
     '''
-    subj_name_dicts, num_channels = gather_inputs(args, True)
+    subj_name_dicts, num_channels = find_inputs(args, True)
     model_dir, model_name = find_model(args)
 
     # Create the fine-tuning parameters dictionary
@@ -296,7 +296,7 @@ def cross_validate(args):
     :param args: Input arguments from argparse
     '''
 
-    subj_name_dicts, num_channels = gather_inputs(args, True)
+    subj_name_dicts, num_channels = find_inputs(args, True)
 
     if len(subj_name_dicts) < args.cv_fold:
         raise ValueError('Number of folds is greater than number of subjects!')
