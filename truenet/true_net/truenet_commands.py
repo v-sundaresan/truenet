@@ -1,5 +1,6 @@
 import os
 import os.path as op
+import glob
 from truenet.true_net import (truenet_train_function, truenet_test_function,
                               truenet_cross_validate, truenet_finetune)
 
@@ -157,27 +158,48 @@ def find_model(args):
                 model_dir = candidate
                 break
 
-    # or a file name prefix
+    # or a directory/file name prefix
     else:
-        model_dir  = op.abspath(op.dirname(args.model_name))
-        model_name = op.basename(args.model_name)
 
-    if (model_dir is None) or (not op.isdir(model_dir)):
-        raise RuntimeError(
-            'Cannot find TRUENET model files at {model_dir}/{model_name} '
-            'check that the path/model name is correct, that pre-trained '
-            'TRUENET models are installed, and/or export TRUENET_PRETRAINED_'
-            'MODEL_PATH=/path/to/my/truenet/models/')
+        # we've been given a directory
+        if op.isdir(args.model_name):
+            model_dir = args.model_name
+            # identify the model file name prefix
+            axfile = glob.glob(f'{model_dir}/*_axial.pth')
+
+            # fall-through to error handling below
+            if len(axfile) == 0:
+                model_name = ''
+
+            # if multiple models, just use the first one.
+            # The user would have to specify which model
+            # to use
+            else:
+                model_name = op.basename(axfile[0]).removesuffix('_axial.pth')
+
+        # we've been given a filename prefix
+        else:
+            model_dir  = op.dirname( args.model_name)
+            model_name = op.basename(args.model_name)
 
     axial      = f'{model_dir}/{model_name}_axial.pth'
     sagittal   = f'{model_dir}/{model_name}_sagittal.pth'
     coronal    = f'{model_dir}/{model_name}_coronal.pth'
+
+    error_msg = ('Cannot find TRUENET model files at {model_dir}/{model_name} '
+                 'check that the path/model name is correct, that pre-trained '
+                 'TRUENET models are installed, and/or export TRUENET_'
+                 'PRETRAINED_MODEL_PATH=/path/to/my/truenet/models/')
+
+    if (model_dir is None) or (not op.isdir(model_dir)):
+        raise RuntimeError(error_msg)
     for model_file in [axial, sagittal, coronal]:
         if not op.isfile(model_file):
-            raise ValueError(f'{model_file} does not appear to be a '
-                             'valid TRUENET model file')
+            raise ValueError(error_msg)
 
-    return model_dir, model_name
+    print(f'Found TRUENET model {model_dir}/{model_name}')
+
+    return op.abspath(model_dir), model_name
 
 
 def train(args):
