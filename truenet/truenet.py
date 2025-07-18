@@ -91,9 +91,9 @@ def main():
     optionalTrain = parser_train.add_argument_group('Optional arguments')
 
     requiredTrain.add_argument('-i', '--inp_dir', required=True, help='Input directory containing training images')
-    requiredTrain.add_argument('-l', '--label_dir', required=True, help='Directory containing lesion manual masks')
     requiredTrain.add_argument('-m', '--model_dir', required=True, help='Directory for saving model weights')
 
+    requiredTrain.add_argument('-l', '--label_dir', help='Directory containing manual lesion masks (default: --inp_dir).')
     optionalTrain.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
     optionalTrain.add_argument('-bfactor', '--batch_factor', type = int, default=10, help='No. of subjects considered for each mini-epoch (default = 10)')
     optionalTrain.add_argument('-loss', '--loss_function', choices=('weighted', 'nweighted'), default='weighted', help='Applying spatial weights to loss function. Options: weighted, nweighted (default=weighted)')
@@ -140,10 +140,10 @@ def main():
     optionalFt = parser_finetune.add_argument_group('Optional arguments')
 
     requiredFt.add_argument('-i', '--inp_dir', required=True, help='Input directory containing training images')
-    requiredFt.add_argument('-l', '--label_dir', required=True, help='Directory containing lesion manual masks')
     requiredFt.add_argument('-m', '--model_name', required=True, help='Pretrained model name or model file basename')
     requiredFt.add_argument('-o', '--output_dir', required=True, help='Output directory for saving fine-tuned models/weights')
 
+    requiredFt.add_argument('-l', '--label_dir', help='Directory containing manual lesion masks (default: --inp_dir).')
     optionalFt.add_argument('-cpld_type', '--cp_load_type', choices=('best', 'last', 'specific'), default='last', help='Checkpoint to be loaded. Options: best, last, specific (default=last')
     optionalFt.add_argument('-cpld_n', '--cpload_everyn_N', type = int, default=10, help='If -cpld_type=specific, the N value (default=10)')
     optionalFt.add_argument('-ftlayers', '--ft_layers', nargs='+', type=int, default=2, help='Layers to fine-tune starting from the decoder (default=1 2)')
@@ -177,9 +177,9 @@ def main():
     optionalCv = parser_cv.add_argument_group('Optional arguments')
 
     requiredCv.add_argument('-i', '--inp_dir', required=True, help='Input directory containing images')
-    requiredCv.add_argument('-l', '--label_dir', required=True, help='Directory containing lesion manual masks')
     requiredCv.add_argument('-o', '--output_dir', required=True, help='Output directory for saving predictions (and models)')
 
+    requiredCv.add_argument('-l', '--label_dir', required=True, help='Directory containing manual lesion masks (default: --inp_dir).')
     optionalCv.add_argument('-fold', '--cv_fold', type = int, default=5, help='Number of folds for cross-validation (default = 5)')
     optionalCv.add_argument('-resume_fold', '--resume_from_fold', type = int, default=1, help='Resume cross-validation from the specified fold (default = 1)')
     optionalCv.add_argument('-tr_prop', '--train_prop', type = float, default=0.8, help='Proportion of data used for training (default = 0.8)')
@@ -217,10 +217,14 @@ def main():
         raise ValueError(f'{args.inp_dir} does not appear to be a valid input directory')
     if hasattr(args, 'model_dir') and not op.isdir(args.model_dir):
         raise ValueError(f'{args.model_dir} does not appear to be a valid directory')
-    if hasattr(args, 'label_dir') and not op.isdir(args.label_dir):
-        raise ValueError(f'{args.label_dir} does not appear to be a valid directory')
     if hasattr(args, 'output_dir') and not op.isdir(args.output_dir):
         raise ValueError(f'{args.output_dir} does not appear to be a valid directory')
+
+    if hasattr(args, 'label_dir'):
+        if args.label_dir is None:
+            args.label_dir = args.inp_dir
+        if not op.isdir(args.label_dir):
+            raise ValueError(f'{args.label_dir} does not appear to be a valid directory')
 
     if getattr(args, 'loss_function', None) == 'weighted':
         if args.gmdist_dir is None:
