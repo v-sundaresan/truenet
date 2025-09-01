@@ -38,13 +38,19 @@ If you use UKBB-trained model:
 
 TRUENET is a part of the FMRIB Software Library (FSL) - refer to the [FSL documentation](https://fsl.fmrib.ox.ac.uk/fsl/docs/) for more details.
 
-You can also install TRUENET independently of FSL, although some functionality will not work without FSL (e.g. the `prepare_truenet_data` script).  TRUENET is published as a conda package on the FSL conda channel - you can install it into a conda environment with a command such as:
+You can also install TRUENET independently of FSL, although some functionality will not work without FSL (e.g. the `prepare_truenet_data` script).  TRUENET is published as a conda package on the FSL conda channel - you can install TRUENET and the pre-trained models into a conda environment with a command such as:
 
 ```
 conda install \
   -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ \
   -c conda-forge \
-  fsl-truenet
+  fsl-truenet fsl-truenet_data
+```
+
+Finally, if you wish, you can install TRUENET into a Python environment manually with `pip`, e.g.:
+
+```
+pip install git+https://github.com/v-sundaresan/truenet/
 ```
 
 ---
