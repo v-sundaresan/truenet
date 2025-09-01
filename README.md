@@ -13,7 +13,7 @@
 
 ---
 ---
- 
+
 ## Citation
 
 If you use TrUE-Net, please cite the following papers:
@@ -32,66 +32,79 @@ If you use UKBB-trained model:
 - Sundaresan, V., Dinsdale, N.K., Jenkinson, M. and Griffanti, L., 2022, March. Omni-Supervised Domain Adversarial Training for White Matter Hyperintensity Segmentation in the UK Biobank. In 2022 IEEE 19th International Symposium on Biomedical Imaging (ISBI) (pp. 1-4). IEEE. [DOI: https://doi.org/10.1109/ISBI52829.2022.9761539]
 
 ---
----
 
-## Dependencies
-- Main truenet dependencies:
-  - Python > 3.6
-  - PyTorch=1.5.0
-- Extra dependencies for pre-processing:
-  - FMRIB software library (FSL) 6.0
-
----
----
 
 ## Installation
-To install the truenet tool do the following:
-1. Clone the git repository into your local directory.
-  - If you are not familiar with GitHub then the easiest way is to use the button labelled **<> Code** (right hand side, just above the file list) on the [main truenet page](/) and select the **Download ZIP** option. After you've done this, move the zip file to where you want to have truenet installed and unzip it.
-3. Open up a terminal, go to the directory created when you unzipped the file, and then run:
+
+TRUENET is a part of the FMRIB Software Library (FSL) - refer to the [FSL documentation](https://fsl.fmrib.ox.ac.uk/fsl/docs/) for more details.
+
+You can also install TRUENET independently of FSL, although some functionality will not work without FSL (e.g. the `prepare_truenet_data` script).  TRUENET is published as a conda package on the FSL conda channel - you can install it into a conda environment with a command such as:
+
 ```
-python setup.py install
-```
-3. Use the instructions in this document ([simple usage](#simple-usage) is recommended for beginners)
-4. For more advanced usage, detailed lists of options for the subcommands are available in the command-line help:
-```
-truenet --help
-```
-And for options and inputs for each sub-command, type:
-```
-truenet <subcommand> --help (e.g. truenet train --help)
+conda install \
+  -c https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public/ \
+  -c conda-forge \
+  fsl-truenet
 ```
 
----
 ---
 
 ## Preprocessing and preparing data for truenet
-T1-weighted and/or FLAIR images, or similar (e.g. T2-weighted images), can be used as inputs for truenet. A series of preprocessing operations needs to be applied to any image that you want to use truenet on. A script for performing these preprocessing steps has been provided: _prepare_truenet_data_
 
-This script performs the following steps:
- - reorienting image to the standard MNI space (using FSL FLIRT)
- - skull-stripping (using FSL BET)
- - bias field correction (using FSL FAST)
- - T1-weighted images (or similar) need to be registered to the FLAIR (or whatever image was used to make the manual masks) using linear rigid-body registration (using FSL FLIRT).
- - creating a white matter mask, obtained from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and the _make bianca mask_ command in FSL BIANCA (Griffanti et al., 2016).
+A series of preprocessing operations needs to be applied to any image that you want to use truenet on (most commonly T1-weighted and/or FLAIR images).
 
-### prepare_truenet_data
-```
-Usage: prepare_truenet_data <FLAIR_image_name> <T1_image_name> <output_basename>
+If using a pre-trained model, T1-weighted and/or FLAIR images need to be skull-stripped, bias-field corrected, and registered together (e.g. to the FLAIR image).
 
-The script prepares the FLAIR and T1 data to be used in FSL truenet with a specified output basename
-FLAIR_image_name: name of the input unprocessed FLAIR image
-T1_image_name: name of the input unprocessed T1 image
-output_basename: name to be used for the processed FLAIR and T1 images (along with the absolute path);
+If you also plan to use truenet to train or fine-tune the model on your data, you will also need your own manual lesion masks (binary images) and two additional files per subject: a distance map from the ventricles and a distance map from the gray matter.
 
-output names are: output_basename_FLAIR.nii.gz, output_basename_T1.nii.gz and output_basename_WMmask.nii.gz will be saved
-```
+To assist in preparing your data, we provide a script that contains all these preprocessing steps: `prepare_truenet_data`.
+
+### The `prepare_truenet_data` command
+
+This command expects to be given your unprocessed T1 and/or FLAIR images.
+
+It will then perform the following steps:
+ - reorients images to the standard MNI space
+ - performs skull-stripping of T1 and FLAIR
+ - performs bias field correction of T1 and FLAIR
+ - registers the T1-weighted  image to the FLAIR using linear rigid-body registration
+ - creates a mask from a dilated and inverted cortical CSF tissue segmentation (combined with other deep grey exclusion masks, using FSL FAST) and the `make_bianca_mask` command in FSL BIANCA (Griffanti et al., 2016).
+ - using the above mask, calculates a distance map from the ventricles and a distance map from the gray matter.
+
 **Example:**
 
-`prepare_truenet_data FLAIR.nii.gz T1.nii.gz sub001`
+`prepare_truenet_data --FLAIR=FLAIR.nii.gz --T1=T1.nii.gz --outname=sub-001`
+
+**Notes:**
+- The `prepare_truenet_data` script uses fairly default options for the different steps, so you may need to optimise some steps (e.g. for BET) for best performance on your own data.
+- Other modalities can be used as input for truenet (e.g. T2-weighted images). A similar preprocessing would need to be applied before training the model with the desired modalities.
+
+### Naming conventions
+
+When running truenet it is necessary to use certain specific names and locations for files:
+ - for segmentation (`evaluate` mode) the images inside the specified input directory need to be named like the outputs from `prepare_truenet_data`, i.e. the FLAIR and/or T1 volumes should be named as:
+   - `<subject_name>_FLAIR.nii.gz`
+   - `<subject_name>_T1.nii.gz`
+ - each output directory that is specified must already exist; if not, use `mkdir` to create it prior to running truenet
+ - for training or fine-tuning, all images need to be in one directory and named:
+   - preprocessed images: `<subject_name>_FLAIR.nii.gz` and/or `<subject_name>_T1.nii.gz`
+   - labelled images: (i.e. manual segmentations) need to be named `<subject_name>_manualmask.nii.gz`
+   - where the `<subject_name>` part should be replaced with your subject identifier (e.g. `sub-001`)
+
+The overall naming conventions are shown in the table below:
+
+| File | Naming format  | Required for `evaluate` | Required for `train` / `fine_tune` |
+| :-----: | :---: | :---: | :---: |
+| Preprocessed Input FLAIR | `<subject_name>_FLAIR.nii.gz`| Y | Y |
+| Preprocessed Input T1 | `<subject_name>_T1.nii.gz`| Y | Y |
+| Preprocessed Input GM distance map | `<subject_name>_GMdistmap.nii.gz`| N | Y |
+| Preprocessed Input Ventricle distance map | `<subject_name>_ventdistmap.nii.gz`| N | Y |
+| Manual mask | `<subject_name>_manualmask.nii.gz`| N | Y |
 
 ---
-Triplanar ensemble U-Net model
+
+## Triplanar ensemble U-Net model
+
 Modes of usage:
 
 ```
@@ -102,85 +115,88 @@ Subcommands available:
     - truenet cross_validate  Leave-one-out validation of TrUE-Net model
 ```
 
----
-
-## Simple usage
+### Simple usage
 
 There are multiple options in how truenet can be used, but a simple summary is this:
- - to segment an image you use the _evaluate_ mode
- - this requires an existing _model_ to be used, where a model is a deep learning network (which is what is inside truenet) that has been trained on some dataset
- - you can use a _pretrained_ model that is supplied with truenet (see [below](#pretrained-models))
+ - to segment an image you use the `evaluate` mode.
+   - This requires an existing _model_ to be used (i.e. a deep learning network - which is what is inside truenet - that has been already trained on some data)
+   - you can use a _pretrained_ model that is supplied with truenet (see [available options below](#pretrained-models))
    - to use any of these pretrained models, your images need to match relatively well to those used to train the model
- - alternatively, you can use a model that you or someone else has trained from scratch (using the _train_ mode of truenet)
+ - alternatively, you can use a model that you or someone else has trained from scratch (using the `train` mode of truenet)
  - another alternative is to take a pretrained model and _fine tune_ this on your data, which is more efficient than training from scratch (that is, it requires less of your own labelled data for training)
 
-### Examples
+**Examples:**
 
- - Using a **pretrained model**, run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory DatasetA/sub001 and containing files names sub001_T1.nii.gz and sub001_FLAIR.nii.gz, as created by `prepare_truenet_data`).
+ - Using a [**pretrained model**](#pretrained-models), run a segmentation on preprocessed data (from subject 1 in dataset A, stored in directory `DatasetA/sub001` and containing files named `sub001_T1.nii.gz` and `sub001_FLAIR.nii.gz`, prepared as described above).
 
-`mkdir DatasetA/results001`
+   ```
+   mkdir DatasetA/results001
+   truenet evaluate -m mwsc \
+     -i DatasetA/sub001 \
+     -o DatasetA/results001
+   ```
 
-`truenet evaluate -i DatasetA/sub001 -m mwsc -o DatasetA/results001`
+ - **Fine-tune an existing model** using images and labels in the same directory (named `sub001_FLAIR.nii.gz`, `sub001_T1.nii.gz` and `sub001_manualmask.nii.gz`, `sub002_FLAIR.nii.gz`, `sub002_T1.nii.gz`, `sub002_manualmask.nii.gz`, etc.):
 
- - **Fine-tune an existing model** using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+   ```
+   mkdir DatasetA/model_finetuned
+   truenet fine_tune -m mwsc \
+     -i DatasetA/Training-partial \
+     -o DatasetA/model_finetuned \
+     -l DatasetA/Training-partial \
+     -loss weighted
+   ```
 
-`mkdir DatasetA/model_finetuned`
+   then apply this model to a new subject:
 
-`truenet fine_tune -i DatasetA/Training-partial -m mwsc -o DatasetA/model_finetuned -l DatasetA/Training-partial -loss weighted`
+   ```
+   truenet evaluate \
+     -m DatasetA/model_finetuned/Truenet_model_weights_beforeES \
+     -i DatasetA/newsub \
+     -o DatasetA/newresults
+   ```
 
-then apply this model to a new subject:
+ - **Training a model from scratch** using images and labels in the same directory (named `sub001_FLAIR.nii.gz`, `sub001_T1.nii.gz` and `sub001_manualmask.nii.gz`, `sub002_FLAIR.nii.gz`, `sub002_T1.nii.gz`, `sub002_manualmask.nii.gz`, etc.):
 
-`truenet evaluate -i DatasetA/newsub -m DatasetA/model_finetuned/Truenet_model_weights_beforeES -o DatasetA/newresults`
+   ```
+   mkdir DatasetA/model
+   truenet train \
+     -m DatasetA/model \
+     -i DatasetA/Training-full \
+     -l DatasetA/Training-full \
+     -loss weighted
+   ```
 
- - **Training a model from scratch** using images and labels in the same directory (named sub001_FLAIR.nii.gz, sub001_T1.nii.gz and sub001_manualmask.nii.gz, sub002_FLAIR.nii.gz, sub002_T1.nii.gz, sub002_manualmask.nii.gz, etc.):
+   then apply this model to a new subject:
 
-`mkdir DatasetA/model`
-
-`truenet train -i DatasetA/Training-full -l DatasetA/Training-full -m DatasetA/model -loss weighted`
-
-then apply this model to a new subject:
-
-`truenet evaluate -i DatasetA/newsub -m DatasetA/model/Truenet_model_weights_beforeES -o DatasetA/newresults`
+   ```
+   truenet evaluate \
+      -m DatasetA/model/Truenet_model_weights_beforeES \
+      -i DatasetA/newsub \
+      -o DatasetA/newresults
+   ```
 
 ---
 
-### Naming conventions
-
-When running truenet it is necessary to use certain specific names and locations for files:
- - for segmentation (_evaluate_ mode) the images inside the specified input directory need to be named like the outputs from _prepare_truenet_data_ :
-   - that is: the FLAIR and/or T1 volumes should be named as *basename*_FLAIR.nii.gz and/or *basename*_T1.nii.gz respectively
- - each output directory that is specified must already exist; if not, use _mkdir_ to create it prior to running truenet
- - for training or fine-tuning, all images need to be in one directory and named:
-   - preprocessed images: *subject*_FLAIR.nii.gz and/or *subject*_T1.nii.gz
-   - labelled images: (i.e. manual segmentations) need to be named *subject*_manualmask.nii.gz
-   - where the *subject* part needs to be replaced with your subject identifier (e.g. sub-001)
-  
-The overall naming conventions are shown in the table below:
-| File | Naming format  |
-| :-----: | :---: |
-| Preprocessed Input FLAIR | <subject_name>_FLAIR.nii.gz| 
-| Preprocessed Input T1 | <subject_name>_T1.nii.gz| 
-| Preprocessed Input GM distance map | <subject_name>_GMdistmap.nii.gz| 
-| Preprocessed Input Ventricle distance map | <subject_name>_ventdistmap.nii.gz| 
-| Manual mask | <subject_name>_manualmask.nii.gz| 
 
 ### Pretrained models
 
-Names of arguments for -m for various pretrained models are given in the table below:
+The table below describes the pretrained models available with truenet, specifying the name for the argument -m in the evaluate and fine_tune options:
+
 | Model | Pretrained on | Naming format |
 | :-----: | :---: | :---: |
-| Single channel, FLAIR only | MICCAI WMH Segmentation Challenge Data | mwsc_flair| 
-| Single channel, T1 only | MICCAI WMH Segmentation Challenge Data | mwsc_t1| 
-| Two channels, FLAIR and T1 | MICCAI WMH Segmentation Challenge Data | mwsc| 
-| Single channel, FLAIR only | UK Biobank dataset | ukbb_flair| 
-| Single channel, T1 only |UK Biobank dataset | ukbb_t1| 
-| Single channel, FLAIR and T1 | UK Biobank dataset | ukbb | 
+| Single channel, FLAIR only | MICCAI WMH Segmentation Challenge Data | `mwsc_flair`|
+| Single channel, T1 only | MICCAI WMH Segmentation Challenge Data | `mwsc_t1`|
+| Two channels, FLAIR and T1 | MICCAI WMH Segmentation Challenge Data | `mwsc`|
+| Single channel, FLAIR only | UK Biobank dataset | `ukbb_flair`|
+| Single channel, T1 only |UK Biobank dataset | `ukbb_t1`|
+| Two channels, FLAIR and T1 | UK Biobank dataset | `ukbb` |
 
 #### Pretrained model recommendations:
 
- - It is highly recommended to use both modalities (FLAIR and T1) as a two channel input if it is possible. 
- - If only one modality is used then FLAIR usually gives better results than just T1 (and use mwsc_flair or ukbb_flair for FLAIR alone).
- - mwsc models are ideal for fine-tuning on small datasets (<20 subjects) while ukbb models are better for larger ones.
+ - It is highly recommended to use both modalities (FLAIR and T1) as a two channel input if it is possible.
+ - If only one modality is used then FLAIR usually gives better results than just T1 (and use `mwsc_flair` or `ukbb_flair` for FLAIR alone).
+ - `mwsc` models are ideal for fine-tuning on small datasets (less than 20 subjects) while `ukbb` models are better for larger ones.
 
 ---
 ### Recommendations
@@ -196,25 +212,12 @@ When performing a fine tuning operation it is necessary to supply your own label
 When performing a training from scratch, the situation is similar to that for fine tuning - you need a set of your own labelled images, but you need more in this case and we would recommend a minimum of 25 images (though again, you can try your luck with less).
 
 ---
-**_IMPORTANT NOTE:_**  
 
-Currently pretrained models, based on the [MWSC](https://wmh.isi.uu.nl/) (MICCAI WMH Segmentation Challenge) and [UKBB](https://www.ukbiobank.ac.uk/enable-your-research/about-our-data) (UK Biobank) datasets, are available at: https://drive.google.com/drive/folders/1iqO-hd27NSHHfKun125Rt-2fh1l9EiuT?usp=share_link. These will be integrated more fully into FSL in the future, where these models will be available in the '$FSLDIR/data/truenet/models' folder. Currently, for testing purposes, you can download the models from the above drive link and place them into a folder of your choice. You then need to set the folder as an environment variable before running truenet.
-To do this, once you download the models into a folder, please type the following in the command prompt:
-```
-export TRUENET_PRETRAINED_MODEL_PATH="/absolute/path/to/the/model/folder"
-```
-where you should replace _/absolute/path/to/the/model/folder_ with the path to the folder that contains the _*.pth_ files.  Then you can run truenet commands using the pretrained models as if they were integrated into FSL. The above export command needs to be done once for each terminal that you open, prior to running truenet.
-
----
----
-
-## Advanced options 
+## Advanced options
 
 Details of the different commands and all their options available through the command-line help.
 
-### Applying the TrUE-Net model (performing segmentation)
-
-#### truenet evaluate: evaluating the TrUE-Net model 
+### Applying the TrUE-Net model (performing segmentation): `truenet evaluate`
 
 ```
 Usage: truenet evaluate -i <input_directory> -m <model_directory> -o <output_directory> [options]
@@ -234,14 +237,13 @@ Optional arguments:
        -h, --help.                           Print help message
 ```
 
-### Fine-tuning an existing TrUE-Net model
+### Fine-tuning an existing TrUE-Net model: `truenet fine_tune`
 
-#### truenet fine_tune: training the TrUE-Net model from scratch 
 <p align="center">
        <img
-       src="images/fine_tuning_images.png"
+       src="structural/fine_tuning_images.png"
        alt="Layers for fine-tuning truenet model."
-       width=500
+       width=400
        />
 </p>
 
@@ -273,7 +275,7 @@ Optional arguments:
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for fine-tuning. Options:adam, sgd [default = adam]
-       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
@@ -285,9 +287,8 @@ Optional arguments:
        -h, --help                            Print help message
 ```
 
-### Training the TrUE-Net model from scratch
+### Training the TrUE-Net model from scratch: `truenet train`
 
-#### truenet train: training the TrUE-Net model from scratch  
 
 ```
 Usage: truenet train -i <input_directory> -l <label_directory> -m <model_directory> [options]
@@ -314,7 +315,7 @@ Optional arguments:
        -lrm, --lr_sch_mlstone        Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma        Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer             Optimizer used for training. Options:adam, sgd [default = adam]
-       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
        -bs, --batch_size             Batch size used for training [default = 8]
        -ep, --num_epochs             Number of epochs for training [default = 60]
        -es, --early_stop_val         Number of epochs to wait for progress (early stopping) [default = 20]
@@ -326,9 +327,7 @@ Optional arguments:
        -h, --help.                   Print help message
 ```
 
-### Cross-validation of TrUE-Net model
-
-#### truenet cross_validate: cross-validation of the TrUE-Net model 
+### Cross-validation of TrUE-Net model: `truenet cross_validate`
 
 ```
 Usage: truenet cross_validate -i <input_directory> -l <label_directory> -o <output_directory> [options]
@@ -357,7 +356,7 @@ Optional arguments:
        -lrm, --lr_sch_mlstone                Milestones for LR scheduler (e.g. -lrm 5 10 - to reduce LR at 5th and 10th epochs) [default = 10]
        -gamma, --lr_sch_gamma                Factor by which the LR needs to be reduced in the LR scheduler [default = 0.1]
        -opt, --optimizer                     Optimizer used for training. Options:adam, sgd [default = adam]
-       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n' 
+       -eps, --epsilon                       Epsilon for adam optimiser (default=1e-4)                                                                           -mom, --momentum                      Momentum for sgd optimiser (default=0.9)\n'
        -bs, --batch_size                     Batch size used for fine-tuning [default = 8]
        -ep, --num_epochs                     Number of epochs for fine-tuning [default = 60]
        -es, --early_stop_val                 Number of fine-tuning epochs to wait for progress (early stopping) [default = 20]
@@ -372,7 +371,7 @@ Optional arguments:
 
 ### TrUE-Net architecture:
 <img
-src="images/main_architecture_final.png"
+src="structural/main_architecture_final.png"
 alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
 />
 
@@ -380,7 +379,7 @@ alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in indivi
 We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
 <p align="center">
        <img
-       src="images/spatial_weight_map.png"
+       src="structural/spatial_weight_map.png"
        alt="Spatial weight maps to be applied in the truenet loss function."
        width=600
        />
