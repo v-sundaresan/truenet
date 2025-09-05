@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import torch
 from torch.utils.data import Dataset
 
@@ -11,7 +7,7 @@ from torch.utils.data import Dataset
 # 09-03-2021, Oxford
 #=========================================================================================
 
-class WMHTestDataset(Dataset):  
+class WMHTestDataset(Dataset):
     """This is a generic class for 2D segmentation datasets.
     :param data: stack of 3D slices N x C x H x W
     :param transform: transformations to apply.
@@ -35,7 +31,7 @@ class WMHTestDataset(Dataset):
     def __len__(self):
         return len(self.data)
 
-class WMHDataset(Dataset):  
+class WMHDataset(Dataset):
     """This is a generic class for 2D segmentation datasets.
     :param data: stack of 3D slices N x C x H x W
     :param target: stack of 3D slices N x C x H x W
@@ -95,7 +91,3 @@ class WMHDatasetWeighted(Dataset):
 
     def __len__(self):
         return len(self.data)
-
-
-
-

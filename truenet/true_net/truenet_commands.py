@@ -1,11 +1,15 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
+import os.path as op
+import glob
+
+import torch
+
+from fsl.scripts.imglob import imglob
+from fsl.data.image     import addExt
+
 from truenet.true_net import (truenet_train_function, truenet_test_function,
                               truenet_cross_validate, truenet_finetune)
-import glob
+
 
 #=========================================================================================
 # Truenet commands function
@@ -18,185 +22,206 @@ import glob
 # Define the train sub-command for truenet
 ##########################################################################################
 
+
+def find_inputs(args, training):
+    """Gathers paths to input files. Returns a list of dictionaries, one for each
+    subject, containing input file paths.
+    """
+
+    ignore_flair = args.t1_only
+    ignore_t1    = args.flair_only
+    inp_dir      = args.inp_dir
+    label_dir    = None
+    gmdist_dir   = None
+    ventdist_dir = None
+
+    if training:
+        label_dir = args.label_dir
+        if args.loss_function == 'weighted':
+            gmdist_dir   = args.gmdist_dir
+            ventdist_dir = args.ventdist_dir
+
+    flair_paths = imglob([f'{inp_dir}/*_FLAIR'])
+    t1_paths    = imglob([f'{inp_dir}/*_T1'])
+    have_flair  = (len(flair_paths)) > 0 and (not ignore_flair)
+    have_t1     = (len(t1_paths))    > 0 and (not ignore_t1)
+
+    if not (have_flair or have_t1):
+        raise ValueError(f'Cannot find any FLAIR/T1 images in {inp_dir} - '
+                         'check that the input directory is correct, and '
+                         'that files are named appropriately, e.g. '
+                         '<subj-id>_FLAIR.nii.gz')
+
+    if have_flair:
+        subj_ids = [op.basename(p.removesuffix('_FLAIR')) for p in flair_paths]
+    else:
+        subj_ids = [op.basename(p.removesuffix('_T1')) for p in t1_paths]
+
+    # Create a list of dictionaries containing required filepaths for the input subjects
+    subj_name_dicts = []
+    for subj_id in subj_ids:
+        flair_path    = None
+        t1_path       = None
+        gmdist_path   = None
+        ventdist_path = None
+        gt_path       = None
+
+        if have_flair and (not ignore_flair):
+            try:
+                flair_path = addExt(f'{inp_dir}/{subj_id}_FLAIR')
+                print(f'FLAIR image found for {subj_id}')
+            except Exception:
+                raise ValueError(f'FLAIR image missing: {inp_dir}/{subj_id}_FLAIR')
+
+        if have_t1 and (not ignore_t1):
+            try:
+                t1_path = addExt(f'{inp_dir}/{subj_id}_T1')
+                print(f'T1 image found for {subj_id}')
+            except Exception:
+                raise ValueError(f'T1 image missing for {inp_dir}/{subj_id}_T1')
+
+        if training:
+            try:
+                gt_path = addExt(f'{label_dir}/{subj_id}_manualmask')
+                print(f'Lesion mask found for {subj_id}')
+            except Exception:
+                raise ValueError(f'Manual lesion mask missing: {label_dir}/{subj_id}_manualmask')
+
+        if training and (args.loss_function == 'weighted'):
+            try:
+                gmdist_path = addExt(f'{gmdist_dir}/{subj_id}_GMdistmap')
+                print(f'GM distance map found for {subj_id}')
+            except Exception:
+                raise ValueError(f'GM distance map missing: {gmdist_dir}/{subj_id}_GMdistmap')
+
+            try:
+                ventdist_path = addExt(f'{ventdist_dir}/{subj_id}_ventdistmap')
+                print(f'Ventricle distance map found for {subj_id}')
+            except Exception:
+                raise ValueError(f'Ventricle distance map missing: {ventdist_dir}/{subj_id}_ventdistmap')
+
+        subj_name_dicts.append({
+            'flair_path'    : flair_path,
+            't1_path'       : t1_path,
+            'gt_path'       : gt_path,
+            'gmdist_path'   : gmdist_path,
+            'ventdist_path' : ventdist_path,
+            'basename'      : subj_id
+        })
+
+    num_channels = int(have_flair) + int(have_t1)
+
+    return subj_name_dicts, num_channels
+
+
+def find_model(args):
+    """Figures out the path to the pre-trained/custom model files.
+    Returns the model directory and model name (which is the model
+    file prefix, i.e. <model_name>_axial.pth, etc.).
+    """
+
+    # Dictionary of pre-trained models: { <model-id> : <model-prefix> }.
+    # The <model-id> is passed on the command-line, and is also the
+    # directory name in $FSLDIR/data/truenet/models/, i.e. pre-trained
+    # models are named
+    #
+    # $FSLDIR/data/truenet/models/<model-id>/<model-prefix>_axial.pth
+    #
+    # etc
+    pretrained_models = {
+        'mwsc_flair' : 'Truenet_MWSC_FLAIR',
+        'mwsc_t1'    : 'Truenet_MWSC_T1',
+        'mwsc'       : 'Truenet_MWSC_FLAIR_T1',
+        'ukbb_flair' : 'Truenet_UKBB_FLAIR',
+        'ukbb_t1'    : 'Truenet_UKBB_T1',
+        'ukbb'       : 'Truenet_UKBB_FLAIR_T1',
+    }
+
+    # We're given either the ID of a pre-trained
+    # model, or a directory/file_name_prefix.
+
+    # name of pre-trained model
+    if args.model_name in pretrained_models:
+        model_id   = args.model_name
+        model_name = pretrained_models[model_id]
+
+        # Search for model directory - will either
+        # be in $FSLDIR/<model_id>, or in
+        # $TRUENET_PRETRAINED_MODEL_PATH/<model_id>
+        model_dir  = None
+        candidates = [op.expandvars('$FSLDIR/data/truenet/models/'),
+                      os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)]
+
+        for candidate in candidates:
+            if candidate is None:
+                continue
+
+            candidate = f'{candidate}/{model_id}'
+
+            if op.isdir(candidate):
+                model_dir = candidate
+                break
+
+    # or a directory/file name prefix
+    else:
+
+        # we've been given a directory
+        if op.isdir(args.model_name):
+            model_dir = args.model_name
+            # identify the model file name prefix
+            axfile = glob.glob(f'{model_dir}/*_axial.pth')
+
+            # fall-through to error handling below
+            if len(axfile) == 0:
+                model_name = ''
+
+            # if multiple models, just use the first one.
+            # The user would have to specify which model
+            # to use
+            else:
+                model_name = op.basename(axfile[0]).removesuffix('_axial.pth')
+
+        # we've been given a filename prefix
+        else:
+            model_dir  = op.dirname( args.model_name)
+            model_name = op.basename(args.model_name)
+
+    axial      = f'{model_dir}/{model_name}_axial.pth'
+    sagittal   = f'{model_dir}/{model_name}_sagittal.pth'
+    coronal    = f'{model_dir}/{model_name}_coronal.pth'
+
+    error_msg = ('Cannot find TRUENET model files at {model_dir}/{model_name} '
+                 'check that the path/model name is correct, that pre-trained '
+                 'TRUENET models are installed, and/or export TRUENET_'
+                 'PRETRAINED_MODEL_PATH=/path/to/my/truenet/models/')
+
+    if (model_dir is None) or (not op.isdir(model_dir)):
+        raise RuntimeError(error_msg)
+    for model_file in [axial, sagittal, coronal]:
+        if not op.isfile(model_file):
+            raise ValueError(error_msg)
+
+    print(f'Found TRUENET model {model_dir}/{model_name}')
+
+    return op.abspath(model_dir), model_name
+
+
+def create_device(args):
+    """Creates the Pytorch device to be used throughout TRUENET."""
+
+    if args.use_cpu or (not torch.cuda.is_available()):
+        return torch.device("cpu")
+    else:
+        return torch.device("cuda")
+
+
 def train(args):
     '''
     :param args: Input arguments from argparse
     '''
-    # Do basic sanity checks and assign variable names
-    inp_dir = args.inp_dir
 
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
-
-    flairflag = 0
-    t1flag = 0
-
-    input_flair_paths = glob.glob(os.path.join(inp_dir,'*_FLAIR.nii')) + \
-              glob.glob(os.path.join(inp_dir,'*_FLAIR.nii.gz'))
-    flairflag = 1
-
-    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                  glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-    t1flag = 1
-
-    if flairflag == 0 and t1flag == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
-
-    if flairflag == 1:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                            glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    else:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                         glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-
-    if os.path.isdir(args.model_dir) is False:
-        raise ValueError(args.model_dir + ' does not appear to be a valid directory')
-    model_dir = args.model_dir
-
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
-    label_dir = args.label_dir
-
-    if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
-        gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
-        ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
-    else:
-        gmdist_dir = None
-        ventdist_dir = None
-
-    # Create a list of dictionaries containing required filepaths for the input subjects
-    subj_name_dicts = []
-    t1_count = 0
-    flair_count = 0
-    for l in range(len(input_paths)):
-        flair_path_name = None
-        t1_path_name = None
-        if flairflag == 1:
-            basepath = input_paths[l].split("_FLAIR.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            flair_path_name = input_paths[l]
-            flair_count += 1
-            print('FLAIR image found for ' + basename, flush=True)
-            if os.path.isfile(basepath + '_T1.nii.gz'):
-                t1_path_name = basepath + '_T1.nii.gz'
-                t1_count += 1
-            elif os.path.isfile(basepath + '_T1.nii'):
-                t1_path_name = basepath + '_T1.nii'
-                t1_count += 1
-            else:
-                print('T1 image not found for ' + basename + ', continuing...', flush=True)
-        else:
-            basepath = input_paths[l].split("_T1.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            t1_path_name = input_paths[l]
-            print('T1 image found for ' + basename, flush=True)
-            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
-
-        # if os.path.isfile(basepath + '_T1.nii.gz'):
-        #     t1_path_name = basepath + '_T1.nii.gz'
-        # elif os.path.isfile(basepath + '_T1.nii'):
-        #     t1_path_name = basepath + '_T1.nii'
-        # else:
-        #     raise ValueError('T1 file does not exist for ' + basename)
-
-        print(os.path.join(label_dir, basename + '_manualmask.nii.gz'), flush=True)
-        if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii.gz')
-        elif os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii')
-        else:
-            raise ValueError('Manual lesion mask does not exist for ' + basename)
-
-        if args.loss_function == 'weighted':
-            weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
-            else:
-                raise ValueError('GM distance file does not exist for ' + basename)
-
-            if os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdistmap.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir,basename + '_ventdistmap.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
-            else:
-                raise ValueError('Ventricle distance file does not exist for ' + basename)
-        else:
-            weighted = False
-            gmdist_path_name = None
-            ventdist_path_name = None
-
-        subj_name_dict = {'flair_path': flair_path_name,
-                          't1_path': t1_path_name,
-                          'gt_path': gt_path_name,
-                          'gmdist_path': gmdist_path_name,
-                          'ventdist_path': ventdist_path_name,
-                          'basename': basename}
-        subj_name_dicts.append(subj_name_dict)
-
-    if flair_count > 0:
-        if 0 < t1_count < flair_count or t1_count > flair_count:
-            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
-        elif t1_count == 0:
-            num_channels = 1
-        elif t1_count == flair_count:
-            num_channels = 2
-    else:
-        if t1_count > 0:
-            num_channels = 1
-
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-            raise ValueError(
-                'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
+    subj_name_dicts, num_channels = find_inputs(args, True)
+    device = create_device(args)
 
     # Create the training parameters dictionary
     training_params = {'Learning_rate': args.init_learng_rate,
@@ -218,17 +243,15 @@ def train(args):
                        'Numchannels': num_channels
                        }
 
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
+    save_wei = not args.save_full_model
+    weighted = args.loss_function == 'weighted'
 
     # Training main function call
-    models = truenet_train_function.main(subj_name_dicts, training_params, aug=args.data_augmentation, weighted=weighted,
-         save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose, dir_cp=model_dir)
+    truenet_train_function.main(
+        subj_name_dicts, device, training_params,
+        aug=args.data_augmentation, weighted=weighted,
+        save_cp=True, save_wei=save_wei, save_case=args.cp_save_type,
+        verbose=args.verbose, dir_cp=args.model_dir)
 
 
 ##########################################################################################
@@ -239,176 +262,21 @@ def evaluate(args):
     '''
     :param args: Input arguments from argparse
     '''
-    # Do basic sanity checks and assign variable names
-    inp_dir = args.inp_dir
-    out_dir = args.output_dir
-
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
-
-    flairflag = 0
-    t1flag = 0
-
-    input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                        glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    flairflag = 1
-
-    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-    t1flag = 1
-
-    if flairflag == 0 and t1flag == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
-
-    if flairflag == 1:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    else:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-
-    if os.path.isdir(out_dir) is False:
-        raise ValueError(out_dir + ' does not appear to be a valid directory')
-
-    # Create a list of dictionaries containing required filepaths for the test subjects
-    subj_name_dicts = []
-    t1_count = 0
-    flair_count = 0
-    for l in range(len(input_paths)):
-        flair_path_name = None
-        t1_path_name = None
-        if flairflag == 1:
-            basepath = input_paths[l].split("_FLAIR.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            flair_path_name = input_paths[l]
-            flair_count += 1
-            print('FLAIR image found for ' + basename, flush=True)
-            if os.path.isfile(basepath + '_T1.nii.gz'):
-                t1_path_name = basepath + '_T1.nii.gz'
-                t1_count += 1
-            elif os.path.isfile(basepath + '_T1.nii'):
-                t1_path_name = basepath + '_T1.nii'
-                t1_count += 1
-            else:
-                print('T1 image not found for ' + basename + ', continuing...', flush=True)
-        else:
-            basepath = input_paths[l].split("_T1.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            t1_path_name = input_paths[l]
-            print('T1 image found for ' + basename, flush=True)
-            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
-
-        # if os.path.isfile(basepath + '_T1.nii.gz'):
-        #     t1_path_name = basepath + '_T1.nii.gz'
-        # elif os.path.isfile(basepath + '_T1.nii'):
-        #     t1_path_name = basepath + '_T1.nii'
-        # else:
-        #     raise ValueError('T1 file does not exist for ' + basename)
-
-        subj_name_dict = {'flair_path': flair_path_name,
-                          't1_path': t1_path_name,
-                          'gmdist_path': None,
-                          'ventdist_path': None,
-                          'basename': basename}
-        subj_name_dicts.append(subj_name_dict)
-
-    if flair_count > 0:
-        if 0 < t1_count < flair_count or t1_count > flair_count:
-            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
-        elif t1_count == 0:
-            num_channels = 1
-        elif t1_count == flair_count:
-            num_channels = 2
-    else:
-        if t1_count > 0:
-            num_channels = 1
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
-
-    if args.model_name == 'mwsc_flair':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_flair')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/flairmodel')
-        model_name = 'Truenet_MWSC_FLAIR'
-    elif args.model_name == 'mwsc_t1':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_t1')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/t1model')
-        model_name = 'Truenet_MWSC_T1'
-    elif args.model_name == 'mwsc':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
-        model_name = 'Truenet_MWSC_FLAIR_T1'
-    elif args.model_name == 'ukbb_flair':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_flair')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/flairmodel')
-        model_name = 'Truenet_UKBB_FLAIR'
-    elif args.model_name == 'ukbb_t1':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_t1')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbbt1/model')
-        model_name = 'Truenet_UKBB_T1'
-    elif args.model_name == 'ukbb':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
-        model_name = 'Truenet_UKBB_FLAIR_T1'
-    else:
-        pretrained = False
-        if os.path.isfile(args.model_name + '_axial.pth') is False or \
-                os.path.isfile(args.model_name + '_sagittal.pth') is False or \
-                os.path.isfile(args.model_name + '_coronal.pth') is False:
-            raise ValueError('In directory ' + os.path.dirname(args.model_name) +
-                             ', ' + os.path.basename(args.model_name) + '_axial.pth or' +
-                             os.path.basename(args.model_name) + '_sagittal.pth or' +
-                             os.path.basename(args.model_name) + '_coronal.pth ' +
-                             'does not appear to be a valid model file')
-        else:
-            model_dir = os.path.dirname(args.model_name)
-            model_name = os.path.basename(args.model_name)
+    subj_name_dicts, num_channels = find_inputs(args, False)
+    model_dir, model_name = find_model(args)
+    device = create_device(args)
 
     # Create the training parameters dictionary
-    eval_params = {'Nclass': args.num_classes,
-                   'EveryN': args.cp_everyn_N,
-                   'Pretrained': pretrained,
+    eval_params = {'EveryN': args.cp_everyn_N,
                    'Modelname': model_name,
-                   'Numchannels': num_channels,
-                   'Use_CPU': args.use_cpu
+                   'Numchannels': num_channels
                    }
 
-    if args.cp_load_type not in ['best', 'last', 'specific']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, specific')
-
-    if args.cp_load_type == 'specific':
-        args.cp_load_type = 'everyN'
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch when using -cp_type is "specific"!')
-
     # Test main function call
-    truenet_test_function.main(subj_name_dicts, eval_params, intermediate=args.intermediate,
-                               model_dir=model_dir, load_case=args.cp_load_type, output_dir=out_dir,
-                               verbose=args.verbose)
+    truenet_test_function.main(
+        subj_name_dicts, device, eval_params, intermediate=args.intermediate,
+        model_dir=model_dir, load_case=args.cp_load_type,
+        output_dir=args.output_dir, verbose=args.verbose)
 
 
 ##########################################################################################
@@ -419,247 +287,9 @@ def fine_tune(args):
     '''
     :param args: Input arguments from argparse
     '''
-    # Do the usual sanity checks
-    inp_dir = args.inp_dir
-
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
-
-    flairflag = 0
-    t1flag = 0
-
-    input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                        glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    flairflag = 1
-
-    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-    t1flag = 1
-
-    if flairflag == 0 and t1flag == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
-
-    if flairflag == 1:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    else:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-
-    if os.path.isdir(args.output_dir) is False:
-        raise ValueError(args.output_dir + ' does not appear to be a valid directory')
-    out_dir = args.output_dir
-
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
-    label_dir = args.label_dir
-
-    if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
-        gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
-        ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
-    else:
-        gmdist_dir = None
-        ventdist_dir = None
-
-    # Create a list of dictionaries containing required filepaths for the fine-tuning subjects
-    subj_name_dicts = []
-    t1_count = 0
-    flair_count = 0
-    for l in range(len(input_paths)):
-        flair_path_name = None
-        t1_path_name = None
-        if flairflag == 1:
-            basepath = input_paths[l].split("_FLAIR.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            flair_path_name = input_paths[l]
-            flair_count += 1
-            print('FLAIR image found for ' + basename, flush=True)
-            if os.path.isfile(basepath + '_T1.nii.gz'):
-                t1_path_name = basepath + '_T1.nii.gz'
-                t1_count += 1
-            elif os.path.isfile(basepath + '_T1.nii'):
-                t1_path_name = basepath + '_T1.nii'
-                t1_count += 1
-            else:
-                print('T1 image not found for ' + basename + ', continuing...', flush=True)
-        else:
-            basepath = input_paths[l].split("_T1.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            t1_path_name = input_paths[l]
-            print('T1 image found for ' + basename, flush=True)
-            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
-
-        # if os.path.isfile(basepath + '_T1.nii.gz'):
-        #     t1_path_name = basepath + '_T1.nii.gz'
-        # elif os.path.isfile(basepath + '_T1.nii'):
-        #     t1_path_name = basepath + '_T1.nii'
-        # else:
-        #     raise ValueError('T1 file does not exist for ' + basename)
-
-        if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii.gz')
-        elif os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii')
-        else:
-            raise ValueError('Manual lesion mask does not exist for ' + basename)
-
-        if args.loss_function == 'weighted':
-            weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
-            else:
-                raise ValueError('GM distance file does not exist for ' + basename)
-
-            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
-            else:
-                raise ValueError('Ventricle distance file does not exist for ' + basename)
-        else:
-            weighted = False
-            gmdist_path_name = None
-            ventdist_path_name = None
-
-        subj_name_dict = {'flair_path': flair_path_name,
-                          't1_path': t1_path_name,
-                          'gt_path':gt_path_name,
-                          'gmdist_path': gmdist_path_name,
-                          'ventdist_path': ventdist_path_name,
-                          'basename': basename}
-        subj_name_dicts.append(subj_name_dict)
-
-    if flair_count > 0:
-        if 0 < t1_count < flair_count or t1_count > flair_count:
-            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
-        elif t1_count == 0:
-            num_channels = 1
-        elif t1_count == flair_count:
-            num_channels = 2
-    else:
-        if t1_count > 0:
-            num_channels = 1
-
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-            raise ValueError(
-                'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
-
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.model_name == 'mwsc_flair':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_flair')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/flairmodel')
-        model_name = 'Truenet_MWSC_FLAIR'
-    elif args.model_name == 'mwsc_t1':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc_t1')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/t1model')
-        model_name = 'Truenet_MWSC_T1'
-    elif args.model_name == 'mwsc':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/mwsc')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/mwsc/model')
-        model_name = 'Truenet_MWSC_FLAIR_T1'
-    elif args.model_name == 'ukbb_flair':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_flair')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/flairmodel')
-        model_name = 'Truenet_UKBB_FLAIR'
-    elif args.model_name == 'ukbb_t1':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb_t1')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbbt1/model')
-        model_name = 'Truenet_UKBB_T1'
-    elif args.model_name == 'ukbb':
-        pretrained = True
-        model_dir = os.path.expandvars('$FSLDIR/data/truenet/models/ukbb')
-        if not os.path.exists(model_dir):
-            model_dir = os.environ.get('TRUENET_PRETRAINED_MODEL_PATH', None)
-            if model_dir is None:
-                raise RuntimeError('Cannot find data; export TRUENET_PRETRAINED_MODEL_PATH=/path/to/my/ukbb/model')
-        model_name = 'Truenet_UKBB_FLAIR_T1'
-    else:
-        pretrained = False
-        if os.path.isfile(args.model_name + '_axial.pth') is False or \
-                os.path.isfile(args.model_name + '_sagittal.pth') is False or \
-                os.path.isfile(args.model_name + '_coronal.pth') is False:
-            raise ValueError('In directory ' + os.path.dirname(args.model_name) +
-                             ', ' + os.path.basename(args.model_name) + '_axial.pth or' +
-                             os.path.basename(args.model_name) + '_sagittal.pth or' +
-                             os.path.basename(args.model_name) + '_coronal.pth ' +
-                             'does not appear to be a valid model file')
-        else:
-            model_dir = os.path.dirname(args.model_name)
-            model_name = os.path.basename(args.model_name)
+    subj_name_dicts, num_channels = find_inputs(args, True)
+    model_dir, model_name = find_model(args)
+    device = create_device(args)
 
     # Create the fine-tuning parameters dictionary
     finetuning_params = {'Finetuning_learning_rate': args.init_learng_rate,
@@ -676,28 +306,22 @@ def fine_tune(args):
                          'Patience': args.early_stop_val,
                          'Aug_factor': args.aug_factor,
                          'EveryN': args.cp_everyn_N,
-                         'Nclass': args.num_classes,
                          'Finetuning_layers': args.ft_layers,
                          'Load_type': args.cp_load_type,
                          'EveryNload': args.cpload_everyn_N,
-                         'Pretrained': pretrained,
                          'Modelname': model_name,
                          'SaveResume': args.save_resume_training,
-                         'Numchannels': num_channels,
-                         'Use_CPU': args.use_cpu,
+                         'Numchannels': num_channels
                          }
 
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
+    save_wei = not args.save_full_model
+    weighted = args.loss_function == 'weighted'
 
     # Fine-tuning main function call
-    truenet_finetune.main(subj_name_dicts, finetuning_params, aug=args.data_augmentation, weighted=weighted,
-                          save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose,
-                          model_dir=model_dir, dir_cp=out_dir)
+    truenet_finetune.main(
+        subj_name_dicts, device, finetuning_params, aug=args.data_augmentation, weighted=weighted,
+        save_cp=True, save_wei=save_wei, save_case=args.cp_save_type, verbose=args.verbose,
+        model_dir=model_dir, dir_cp=args.output_dir)
 
 ##########################################################################################
 # Define the loo_validate (leave-one-out validation) sub-command for truenet
@@ -707,189 +331,9 @@ def cross_validate(args):
     '''
     :param args: Input arguments from argparse
     '''
-    # Usual sanity check for checking if filepaths and files exist.
-    inp_dir = args.inp_dir
 
-    if not os.path.isdir(inp_dir):
-        raise ValueError(inp_dir + ' does not appear to be a valid input directory')
-
-    flairflag = 0
-    t1flag = 0
-
-    input_flair_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                        glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    flairflag = 1
-
-    input_t1_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                     glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-    t1flag = 1
-
-    if flairflag == 0 and t1flag == 0:
-        raise ValueError(inp_dir + ' does not contain any FLAIR/T1 images / filenames NOT in required format')
-
-    if flairflag == 1:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_FLAIR.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_FLAIR.nii.gz'))
-    else:
-        input_paths = glob.glob(os.path.join(inp_dir, '*_T1.nii')) + \
-                      glob.glob(os.path.join(inp_dir, '*_T1.nii.gz'))
-
-    if os.path.isdir(args.output_dir) is False:
-        raise ValueError(args.output_dir + ' does not appear to be a valid directory')
-    out_dir = args.output_dir
-
-    if os.path.isdir(args.label_dir) is False:
-        raise ValueError(args.label_dir + ' does not appear to be a valid directory')
-    label_dir = args.label_dir
-
-    # if os.path.isdir(model_dir) is False:
-    #     raise ValueError(model_dir + ' does not appear to be a valid directory')
-
-    if args.cv_fold < 1:
-        raise ValueError('Number of folds cannot be 0 or negative')
-
-    if args.resume_from_fold < 1:
-        raise ValueError('Fold to resume cannot be 0 or negative')
-
-    if args.loss_function == 'weighted':
-        if args.gmdist_dir is None:
-            raise ValueError('-gdir must be provided when using -loss is "weighted"!')
-        gmdist_dir = args.gmdist_dir
-        if os.path.isdir(gmdist_dir) is False:
-            raise ValueError(gmdist_dir + ' does not appear to be a valid GM distance files directory')
-
-    if args.loss_function == 'weighted':
-        if args.ventdist_dir is None:
-            raise ValueError('-vdir must be provided when using -loss is "weighted"!')
-        ventdist_dir = args.ventdist_dir
-        if os.path.isdir(ventdist_dir) is False:
-            raise ValueError(ventdist_dir + ' does not appear to be a valid ventricle distance files directory')
-    else:
-        gmdist_dir = None
-        ventdist_dir = None
-
-    # Create a list of dictionaries containing required filepaths for the input subjects
-    subj_name_dicts = []
-    t1_count = 0
-    flair_count = 0
-    for l in range(len(input_paths)):
-        flair_path_name = None
-        t1_path_name = None
-        if flairflag == 1:
-            basepath = input_paths[l].split("_FLAIR.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            flair_path_name = input_paths[l]
-            flair_count += 1
-            print('FLAIR image found for ' + basename, flush=True)
-            if os.path.isfile(basepath + '_T1.nii.gz'):
-                t1_path_name = basepath + '_T1.nii.gz'
-                t1_count += 1
-            elif os.path.isfile(basepath + '_T1.nii'):
-                t1_path_name = basepath + '_T1.nii'
-                t1_count += 1
-            else:
-                print('T1 image not found for ' + basename + ', continuing...', flush=True)
-        else:
-            basepath = input_paths[l].split("_T1.nii")[0]
-            basename = basepath.split(os.sep)[-1]
-            t1_path_name = input_paths[l]
-            print('T1 image found for ' + basename, flush=True)
-            print('FLAIR image not found for ' + basename + ', continuing...', flush=True)
-
-        # if os.path.isfile(basepath + '_T1.nii.gz'):
-        #     t1_path_name = basepath + '_T1.nii.gz'
-        # elif os.path.isfile(basepath + '_T1.nii'):
-        #     t1_path_name = basepath + '_T1.nii'
-        # else:
-        #     raise ValueError('T1 file does not exist for ' + basename)
-
-        if os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii.gz')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii.gz')
-        elif os.path.isfile(os.path.join(label_dir, basename + '_manualmask.nii')):
-            gt_path_name = os.path.join(label_dir, basename + '_manualmask.nii')
-        else:
-            raise ValueError('Manual lesion mask does not exist for ' + basename)
-
-        if args.loss_function == 'weighted':
-            weighted = True
-            if os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(gmdist_dir, basename + '_GMdistmap.nii')):
-                gmdist_path_name = os.path.join(gmdist_dir, basename + '_GMdistmap.nii')
-            else:
-                raise ValueError('GM distance file does not exist for ' + basename)
-
-            if os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii.gz')
-            elif os.path.isfile(os.path.join(ventdist_dir, basename + '_ventdistmap.nii')):
-                ventdist_path_name = os.path.join(ventdist_dir, basename + '_ventdistmap.nii')
-            else:
-                raise ValueError('Ventricle distance file does not exist for ' + basename)
-        else:
-            weighted = False
-            gmdist_path_name = None
-            ventdist_path_name = None
-
-        subj_name_dict = {'flair_path': flair_path_name,
-                          't1_path': t1_path_name,
-                          'gt_path': gt_path_name,
-                          'gmdist_path': gmdist_path_name,
-                          'ventdist_path': ventdist_path_name,
-                          'basename': basename}
-        subj_name_dicts.append(subj_name_dict)
-
-    if flair_count > 0:
-        if 0 < t1_count < flair_count or t1_count > flair_count:
-            raise ValueError('For One or more subjects, T1 files are missing for corresponding FLAIR files')
-        elif t1_count == 0:
-            num_channels = 1
-        elif t1_count == flair_count:
-            num_channels = 2
-    else:
-        if t1_count > 0:
-            num_channels = 1
-
-    if isinstance(args.init_learng_rate, float) is False:
-        raise ValueError('Initial learning rate must be a float value')
-    else:
-        if args.init_learng_rate > 1:
-            raise ValueError('Initial learning rate must be between 0 and 1')
-
-    if args.optimizer not in ['adam', 'sgd']:
-        raise ValueError('Invalid option for Optimizer: Valid options: adam, sgd')
-
-    if args.acq_plane not in ['axial', 'sagittal', 'coronal', 'all']:
-        raise ValueError('Invalid option for acquisition plane: Valid options: axial, sagittal, coronal, all')
-
-    if isinstance(args.lr_sch_gamma, float) is False:
-        raise ValueError('Learning rate reduction factor must be a float value')
-    else:
-        if args.lr_sch_gamma > 1:
-            raise ValueError('Learning rate reduction factor must be between 0 and 1')
-
-    if isinstance(args.train_prop, float) is False:
-        raise ValueError('Training data proportion must be a float value')
-    else:
-        if args.train_prop > 1:
-            raise ValueError('Training data proportion must be between 0 and 1')
-
-    if args.batch_size < 1:
-        raise ValueError('Batch size must be an int and > 1')
-    if args.num_epochs < 1:
-        raise ValueError('Number of epochs must be an int and > 1')
-    if args.batch_factor < 1:
-        raise ValueError('Batch factor must be an int and > 1')
-    if args.early_stop_val < 1 or args.early_stop_val > args.num_epochs:
-        raise ValueError('Early stopping patience value must be an int and > 1 and < number of epochs')
-    if args.aug_factor < 1:
-        raise ValueError('Augmentation factor must be an int and > 1')
-    # if args.cp_save_type == 'everyN':
-    #     if args.cp_everyn_N < 1 or args.cp_everyn_N > args.num_epochs:
-    #         raise ValueError(
-    #             'N value for saving checkpoints for every N epochs must be an int and > 1and < number of epochs')
-
-    if args.num_classes < 1:
-        raise ValueError('Number of classes to consider in target segmentations must be an int and > 1')
+    subj_name_dicts, num_channels = find_inputs(args, True)
+    device = create_device(args)
 
     if len(subj_name_dicts) < args.cv_fold:
         raise ValueError('Number of folds is greater than number of subjects!')
@@ -919,20 +363,12 @@ def cross_validate(args):
                  'Numchannels': num_channels
                  }
 
-    if args.save_full_model == 'True':
-        save_wei = False
-    else:
-        save_wei = True
-
-    if args.cp_save_type not in ['best', 'last', 'everyN']:
-        raise ValueError('Invalid option for checkpoint save type: Valid options: best, last, everyN')
-
-    if args.cp_save_type == 'everyN':
-        if args.cp_everyn_N is None:
-            raise ValueError('-cp_n must be provided to specify the epoch for loading CP when using -cp_type is "everyN"!')
+    save_wei = not args.save_full_model
+    weighted = args.loss_function == 'weighted'
 
     # Cross-validation main function call
-    truenet_cross_validate.main(subj_name_dicts, cv_params, aug=args.data_augmentation, weighted=weighted,
-                                intermediate=args.intermediate, save_cp=args.save_checkpoint, save_wei=save_wei,
-                                save_case=args.cp_save_type, verbose=args.verbose, dir_cp=out_dir,
-                                output_dir=out_dir)
+    truenet_cross_validate.main(
+        subj_name_dicts, device, cv_params, aug=args.data_augmentation, weighted=weighted,
+        intermediate=args.intermediate, save_cp=args.save_checkpoint, save_wei=save_wei,
+        save_case=args.cp_save_type, verbose=args.verbose, dir_cp=args.output_dir,
+        output_dir=args.output_dir)

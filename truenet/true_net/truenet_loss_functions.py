@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,7 +14,7 @@ class DiceLoss(_WeightedLoss):
     Dice loss
     '''
     def __init__(self, weight=None):
-        super(DiceLoss, self).__init__(weight)
+        super().__init__(weight)
 
     def forward(self, pred_binary, target_binary):
         """
@@ -32,9 +28,7 @@ class DiceLoss(_WeightedLoss):
         target_vect = target_binary.contiguous().view(-1)
         intersection = (pred_vect * target_vect).sum()
         dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        dice = dice.to(device=device,dtype=torch.float)
-        return -dice
+        return -dice.to(torch.float)
 
 
 class MulticlassDiceLoss(_WeightedLoss):
@@ -58,10 +52,8 @@ class MulticlassDiceLoss(_WeightedLoss):
             intersection = (pred_vect * target_vect).sum()
             dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
             dice_val += dice
-        dice_val = dice_val/numclasses
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        dice_val = dice_val.to(device=device,dtype=torch.float)
-        return -dice_val
+        dice_val = (dice_val/numclasses)
+        return -dice_val.to(torch.float)
 
 
 class CrossEntropyLoss2d(_WeightedLoss):
@@ -80,8 +72,7 @@ class CrossEntropyLoss2d(_WeightedLoss):
         :param targets: torch.tensor (N)
         :return: scalar
         """
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        targets = targets.to(device=device, dtype=torch.long)
+        targets = targets.to(torch.long)
         return self.nll_loss(inputs, targets)
 
 
@@ -121,7 +112,7 @@ class CombinedMultiLoss(_Loss):
     """
 
     def __init__(self, nclasses=2):
-        super(CombinedLoss, self).__init__()
+        super().__init__()
         self.cross_entropy_loss = CrossEntropyLoss2d()
         self.multi_dice_loss = MulticlassDiceLoss()
         self.nclasses = nclasses
@@ -148,7 +139,3 @@ class CombinedMultiLoss(_Loss):
                 l1 = torch.mean(
                     torch.mul(self.cross_entropy_loss.forward(input, target), weight.cuda()))
         return l1 + l2
-
-
-    
-

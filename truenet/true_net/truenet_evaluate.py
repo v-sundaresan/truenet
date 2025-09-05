@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 import torch
 import torch.nn as nn
@@ -35,7 +31,7 @@ def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', 
     :param test_name_dicts: list of dictionaries with test filepaths
     :param model: test model
     :param test_params: parameters used for testing
-    :param device: cpu or gpu
+    :param device: pytorch device
     :param mode: acquisition plane
     :param verbose: display debug messages
     :return: predicted probability array
@@ -63,18 +59,12 @@ def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', 
                 print('Validation mask dimensions........')
                 print(val_pred.size())
 
-            softmax = nn.Softmax()
+            softmax = nn.Softmax(dim=1)
             probs = softmax(val_pred)
-            
+
             probs_nparray = probs.detach().cpu().numpy()
-        
+
             prob_array = np.concatenate((prob_array,probs_nparray),axis=0) if prob_array.size else probs_nparray
 
-    prob_array = prob_array.transpose(0,2,3,1)                
+    prob_array = prob_array.transpose(0,2,3,1)
     return prob_array
-
-
-
-
-
-

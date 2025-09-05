@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 from truenet.true_net import truenet_data_preprocessing
 from skimage.transform import resize
@@ -13,18 +9,16 @@ import nibabel as nib
 # 10-03-2021, Oxford
 #=========================================================================================
 
-def resize_to_original_size(probs, testpathdicts, plane='axial'):
+def resize_to_original_size(probs, ref_image_path, plane='axial'):
     '''
     :param probs: predicted 4d probability maps (N x H x W x Classes)
-    :param testpathdicts: list of dictionaries containing test image datapaths
+    :param ref_image_path: Reference image for determining dimensions.
     :param plane: Acquisition plane
     :return: 3D probability maps with cropped dimensions.
     '''
     overall_prob = np.array([])
-    st = 0    
-    testpath = testpathdicts[0]
-    flair_path = testpath['flair_path']
-    data = nib.load(flair_path).get_fdata()
+    st = 0
+    data = nib.load(ref_image_path).get_fdata()
     _,coords = truenet_data_preprocessing.tight_crop_data(data)
     if plane =='axial':
         probs_sub = probs[st:st+coords[5],:,:,:]
@@ -38,7 +32,7 @@ def resize_to_original_size(probs, testpathdicts, plane='axial'):
         for sli in range(probs_sub.shape[0]):
             probs_sub_resize[sli,:,:] = resize(probs_sub[sli,:,:,1], [coords[3], coords[5]], preserve_range=True)
         prob_specific_sub = probs_sub_resize.transpose(2,0,1)
-        overall_prob = np.concatenate((overall_prob,prob_specific_sub),axis = 0) if overall_prob.size else prob_specific_sub 
+        overall_prob = np.concatenate((overall_prob,prob_specific_sub),axis = 0) if overall_prob.size else prob_specific_sub
     elif plane == 'coronal':
         probs_sub = probs[st:st+coords[3],:,:,:]
         probs_sub_resize = np.zeros([probs_sub.shape[0],128,coords[5]])
@@ -49,18 +43,16 @@ def resize_to_original_size(probs, testpathdicts, plane='axial'):
     return overall_prob
 
 
-def get_final_3dvolumes(volume3d,testpathdicts):
+def get_final_3dvolumes(volume3d, ref_image_path):
     '''
     :param volume3d: 3D probability maps
-    :param testpathdicts: 3D probability maps in original dimensions
-    :return:
+    :param ref_image_path: Reference image for determining dimensions
+    :return: 3D probability maps in original dimensions
     '''
     volume3d = np.tile(volume3d,(1,1,1,1))
     volume4d = volume3d.transpose(1,2,3,0)
     st = 0
-    testpath = testpathdicts[0]
-    flair_path = testpath['flair_path']
-    data = nib.load(flair_path).get_fdata()
+    data = nib.load(ref_image_path).get_fdata()
     volume3d = 0 * data
     _,coords = truenet_data_preprocessing.tight_crop_data(data)
     row_cent = coords[1]//2 + coords[0]
@@ -74,5 +66,3 @@ def get_final_3dvolumes(volume3d,testpathdicts):
     required_stacks = volume4d[st:st+data_sub.shape[2],:data_sub.shape[0],:data_sub.shape[1],0].transpose(1,2,0)
     volume3d[rowstart:rowend,colstart:colend,stackstart:stackend] = required_stacks
     return volume3d
-
-
