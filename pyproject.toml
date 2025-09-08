@@ -26,9 +26,12 @@ truenet = "truenet.truenet:main"
 include = ["truenet"]
 
 # Shell scripts
-[tool.setuptools.script-files]
-prepare_truenet_data = "truenet/scripts/prepare_truenet_data"
-make_WMmask_flair    = "truenet/scripts/make_WMmask_flair"
+[tool.setuptools]
+
+script-files = [
+  "truenet/scripts/prepare_truenet_data",
+  "truenet/scripts/make_WMmask_flair"
+]
 
 # automatic version number from git tag
 [tool.setuptools_scm]
