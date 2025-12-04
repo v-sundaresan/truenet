@@ -23,7 +23,7 @@ dependencies = [
 truenet = "truenet.truenet:main"
 
 [tool.setuptools.packages.find]
-include = ["truenet"]
+include = ["truenet*"]
 
 # Shell scripts
 [tool.setuptools]
