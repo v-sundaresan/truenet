@@ -11,19 +11,6 @@ from truenet.utils import truenet_dataset_utils
 # 10-03-2021, Oxford
 #=========================================================================================
 
-def dice_coeff(inp, tar):
-    '''
-    Calculating Dice similarity coefficient
-    :param inp: Input tensor
-    :param tar: Target tensor
-    :return: Dice value (scalar)
-    '''
-    smooth = 1.
-    pred_vect = inp.contiguous().view(-1)
-    target_vect = tar.contiguous().view(-1)
-    intersection = (pred_vect * target_vect).sum()
-    dice = (2. * intersection + smooth) / (torch.sum(pred_vect) + torch.sum(target_vect) + smooth)
-    return dice
 
 def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', verbose=False):
     '''
