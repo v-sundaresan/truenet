@@ -24,7 +24,7 @@ def evaluate_truenet(test_name_dicts, model, test_params, device, mode='axial', 
     :return: predicted probability array
     '''
     testdata = truenet_data_preparation.create_test_data_array(test_name_dicts, plane=mode)
-    data = testdata[0].transpose(0,3,1,2)
+    data = testdata.transpose(0,3,1,2)
 
     test_dataset_dict = truenet_dataset_utils.WMHTestDataset(data)
     test_dataloader = DataLoader(test_dataset_dict, batch_size=1, shuffle=False, num_workers=0)
