@@ -17,88 +17,72 @@ def create_data_array(names, is_weighted=True, plane='axial'):
     :param plane: acquisition plane
     :return: dictionary of input arrays
     '''
-    data = np.array([])
-    data_t1 = np.array([])
-    labels = np.array([])
+    data        = np.array([])
+    data_t1     = np.array([])
+    labels      = np.array([])
     GM_distance = np.array([])
     ventdistmap = np.array([])
 
+    def append(dest, arr, binarise=False):
+        if plane == 'axial':
+            arr   = arr.transpose(2, 0, 1)
+            shape = [arr.shape[0], 128, 192]
+        elif plane == 'sagittal':
+            shape = [arr.shape[0], 192, 120]
+        elif plane == 'coronal':
+            arr   = arr.transpose(1, 0, 2)
+            shape = [arr.shape[0], 128, 80]
+
+        arr = resize(arr, shape, preserve_range=True)
+
+        if binarise:
+            arr = (arr > 0.5).astype(float)
+
+        if dest is not None and dest.size:
+            return np.concatenate((dest, arr), axis=0)
+        else:
+            return arr
+
     for i in range(len(names)):
         array_loaded = load_and_crop_data(names[i], weighted=is_weighted)
-        data_sub1 = array_loaded['data_cropped']
+        data_sub1    = array_loaded['data_cropped']
         data_t1_sub1 = array_loaded['data_t1_cropped']
-        labels_sub1 = array_loaded['label_cropped']
+        labels_sub1  = array_loaded['label_cropped']
+
         if is_weighted:
             GM_distance_sub1 = array_loaded['gmdist_cropped']
             ventdistmap_sub1 = array_loaded['ventdist_cropped']
 
-        if plane == 'axial':
-            if data_sub1 is not None:
-                data_sub1 = data_sub1.transpose(2, 0, 1)
-                data = np.concatenate(
-                    (data, resize(data_sub1, [data_sub1.shape[0], 128, 192], preserve_range=True)),
-                    axis=0) if data.size else resize(data_sub1, [data_sub1.shape[0], data_sub1.shape[1], 192],
-                                                     preserve_range=True)
-            if data_t1_sub1 is not None:
-                data_t1_sub1 = data_t1_sub1.transpose(2,0,1)
-                data_t1 = np.concatenate((data_t1,
-                                          resize(data_t1_sub1, [data_t1_sub1.shape[0], 128, 192],
-                                                 preserve_range=True)), axis=0) if data_t1.size else resize(
-                    data_t1_sub1, [data_t1_sub1.shape[0], data_t1_sub1.shape[1], 192], preserve_range=True)
-            labels_sub1 = labels_sub1.transpose(2,0,1)
-            labels = np.concatenate((labels, (resize(labels_sub1,[labels_sub1.shape[0],128,192],preserve_range=True)>0.5).astype(float)),axis=0) if labels.size else (resize(labels_sub1,[labels_sub1.shape[0],128,192],preserve_range=True)>0.5).astype(float)
-            if is_weighted:
-                GM_distance_sub1 = GM_distance_sub1.transpose(2, 0, 1)
-                ventdistmap_sub1 = ventdistmap_sub1.transpose(2, 0, 1)
-                GM_distance = np.concatenate((GM_distance, resize(GM_distance_sub1,[GM_distance_sub1.shape[0],128,192],preserve_range=True)),axis=0) if GM_distance.size else resize(GM_distance_sub1,[GM_distance_sub1.shape[0],128,192],preserve_range=True)
-                ventdistmap = np.concatenate((ventdistmap, resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],128,192],preserve_range=True)),axis=0) if ventdistmap.size else resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],128,192],preserve_range=True)
-        elif plane == 'sagittal':
-            if data_sub1 is not None:
-                data = np.concatenate((data, resize(data_sub1,[data_sub1.shape[0],192,120],preserve_range=True)),axis=0) if data.size else resize(data_sub1,[data_sub1.shape[0],192,120],preserve_range=True)
-            if data_t1_sub1 is not None:
-                data_t1 = np.concatenate((data_t1, resize(data_t1_sub1,[data_t1_sub1.shape[0],192,120],preserve_range=True)),axis=0) if data_t1.size else resize(data_t1_sub1,[data_t1_sub1.shape[0],192,120],preserve_range=True)
-            labels = np.concatenate((labels, (resize(labels_sub1,[labels_sub1.shape[0],192,120],preserve_range=True)>0.5).astype(float)),axis=0) if labels.size else (resize(labels_sub1,[labels_sub1.shape[0],192,120],preserve_range=True)>0.5).astype(float)
-            if is_weighted:
-                GM_distance = np.concatenate((GM_distance, resize(GM_distance_sub1,[GM_distance_sub1.shape[0],192,120],preserve_range=True)),axis=0) if GM_distance.size else resize(GM_distance_sub1,[GM_distance_sub1.shape[0],192,120],preserve_range=True)
-                ventdistmap = np.concatenate((ventdistmap, resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],192,120],preserve_range=True)),axis=0) if ventdistmap.size else resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],192,120],preserve_range=True)
-        elif plane == 'coronal':
-            if data_sub1 is not None:
-                data_sub1 = data_sub1.transpose(1,0,2)
-                data = np.concatenate(
-                    (data, resize(data_sub1, [data_sub1.shape[0], 128, 80], preserve_range=True)),
-                    axis=0) if data.size else resize(data_sub1, [data_sub1.shape[0], 128, 80],
-                                                     preserve_range=True)
-            if data_t1_sub1 is not None:
-                data_t1_sub1 = data_t1_sub1.transpose(1,0,2)
-                data_t1 = np.concatenate((data_t1,
-                                          resize(data_t1_sub1, [data_t1_sub1.shape[0], 128, 80],
-                                                 preserve_range=True)), axis=0) if data_t1.size else resize(
-                    data_t1_sub1, [data_t1_sub1.shape[0], 128, 80], preserve_range=True)
+        if data_sub1 is not None:
+            data = append(data, data_sub1)
 
-            labels_sub1 = labels_sub1.transpose(1,0,2)
-            labels = np.concatenate((labels, (resize(labels_sub1,[labels_sub1.shape[0],128,80],preserve_range=True)>0.5).astype(float)),axis=0) if labels.size else (resize(labels_sub1,[labels_sub1.shape[0],128,80],preserve_range=True)>0.5).astype(float)
-            if is_weighted:
-                GM_distance_sub1 = GM_distance_sub1.transpose(1, 0, 2)
-                ventdistmap_sub1 = ventdistmap_sub1.transpose(1, 0, 2)
-                GM_distance = np.concatenate((GM_distance, resize(GM_distance_sub1,[GM_distance_sub1.shape[0],128,80],preserve_range=True)),axis=0) if GM_distance.size else resize(GM_distance_sub1,[GM_distance_sub1.shape[0],128,80],preserve_range=True)
-                ventdistmap = np.concatenate((ventdistmap, resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],128,80],preserve_range=True)),axis=0) if ventdistmap.size else resize(ventdistmap_sub1,[ventdistmap_sub1.shape[0],128,80],preserve_range=True)
+        if data_t1_sub1 is not None:
+            data_t1 = append(data_t1, data_t1_sub1)
 
-    if data_sub1 is None:
-        data = None
-    else:
+        labels = append(labels, labels_sub1, binarise=True)
+
+        if is_weighted:
+            GM_distance = append(GM_distance, GM_distance_sub1)
+            ventdistmap = append(ventdistmap, ventdistmap_sub1)
+
+    if data.size:
         data = np.tile(data,(1,1,1,1))
         data = data.transpose(1,2,3,0)
-    if data_t1_sub1 is None:
-        data_t1 = None
     else:
+        data = None
+
+    if data_t1.size:
         data_t1 = np.tile(data_t1,(1,1,1,1))
         data_t1 = data_t1.transpose(1,2,3,0)
+    else:
+        data_t1 = None
+
     labels = np.tile(labels,(1,1,1,1))
     labels = labels.transpose(1,2,3,0)
 
     input_data = {'flair': data, 't1': data_t1, 'label': labels, 'gmdist':None, 'ventdist':None}
     if is_weighted:
-        input_data['gmdist'] = GM_distance
+        input_data['gmdist']   = GM_distance
         input_data['ventdist'] = ventdistmap
     return input_data
 
