@@ -21,9 +21,9 @@ def resize_to_original_size(probs, ref_image_path, plane='axial'):
     _,coords = truenet_data_preprocessing.tight_crop_data(data)
     if plane =='axial':
         probs_sub = probs[:coords[5],:,:,:]
-        prob_specific_sub = np.zeros([probs_sub.shape[0],probs_sub.shape[1],coords[3]])
+        prob_specific_sub = np.zeros([probs_sub.shape[0],coords[1],coords[3]])
         for sli in range(probs_sub.shape[0]):
-            prob_specific_sub[sli,:,:] = resize(probs_sub[sli,:,:,1], [probs_sub.shape[1], coords[3]], preserve_range=True)
+            prob_specific_sub[sli,:,:] = resize(probs_sub[sli,:,:,1], [coords[1], coords[3]], preserve_range=True)
         overall_prob = np.concatenate((overall_prob,prob_specific_sub),axis = 0) if overall_prob.size else prob_specific_sub
     elif plane == 'sagittal':
         probs_sub = probs[:coords[1],:,:,:]

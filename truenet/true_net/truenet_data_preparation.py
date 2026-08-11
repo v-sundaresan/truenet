@@ -369,7 +369,7 @@ def create_test_data_array(names, plane='axial'):
             shape = [arr.shape[0], 128, 192]
 
         elif plane == 'sagittal':
-            shape = [data_sub1.shape[0], 192, 120]
+            shape = [arr.shape[0], 192, 120]
 
         elif plane == 'coronal':
             arr   = arr.transpose(1, 0, 2)
