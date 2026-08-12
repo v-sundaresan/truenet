@@ -17,8 +17,8 @@ def create_data_array(names, is_weighted=True, plane='axial'):
     :param plane: acquisition plane
     :return: dictionary of input arrays
     '''
-    data        = np.array([])
-    data_t1     = np.array([])
+    data        = None
+    data_t1     = None
     labels      = np.array([])
     GM_distance = np.array([])
     ventdistmap = np.array([])
@@ -65,13 +65,13 @@ def create_data_array(names, is_weighted=True, plane='axial'):
             GM_distance = append(GM_distance, GM_distance_sub1)
             ventdistmap = append(ventdistmap, ventdistmap_sub1)
 
-    if data.size:
+    if data is not None and data.size:
         data = np.tile(data,(1,1,1,1))
         data = data.transpose(1,2,3,0)
     else:
         data = None
 
-    if data_t1.size:
+    if data is not None and data_t1.size:
         data_t1 = np.tile(data_t1,(1,1,1,1))
         data_t1 = data_t1.transpose(1,2,3,0)
     else:
@@ -359,8 +359,8 @@ def create_test_data_array(names, plane='axial'):
     :param plane: acquisition plane
     :return: input array
     '''
-    data    = np.array([])
-    data_t1 = np.array([])
+    data    = None
+    data_t1 = None
 
     def append(dest, arr):
 
