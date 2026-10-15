@@ -247,7 +247,7 @@ Optional arguments:
 
 <p align="center">
        <img
-       src="structural/fine_tuning_images.png"
+       src="images/fine_tuning_images.png"
        alt="Layers for fine-tuning truenet model."
        width=400
        />
@@ -376,16 +376,18 @@ Optional arguments:
 ## Technical Details
 
 ### TrUE-Net architecture:
+
 <img
-src="structural/main_architecture_final.png"
+src="images/main_architecture_final.png"
 alt="Triplanar U-Net ensemble network (TrUE-Net). (a) U-Net model used in individual planes, (b) Overall TrUE-Net architecture."
 />
 
 ### Applying spatial weights in the loss function:
 We used a weighted sum of the voxel-wise cross-entropy loss function and the Dice loss as the total cost function. We weighted the CE loss function using a spatial weight map (a sample shown in the figure) to up-weight the areas that are more likely to contain the less represented class (i.e. WMHs).
+
 <p align="center">
        <img
-       src="structural/spatial_weight_map.png"
+       src="images/spatial_weight_map.png"
        alt="Spatial weight maps to be applied in the truenet loss function."
        width=600
        />
